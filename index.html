@@ -54,8 +54,13 @@ a.lnk{color:var(--g);text-decoration:underline;cursor:pointer}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><p style="padding:40px 20px;color:#7d8b86">Loading...</p></div>
 
+<script>
+function showErr(m){var d=document.getElementById('errbar')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'errbar'}));d.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;padding:12px 16px;font-size:13px;z-index:99;word-break:break-word';d.textContent='Error: '+m;}
+addEventListener('error',function(e){showErr(e.message)});
+addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.message)||e.reason)});
+</script>
 <script type="module">
 /* ============ 1) Paste your Firebase config here (Firebase Console > Project settings) ============ */
 const firebaseConfig = {
@@ -71,13 +76,13 @@ const firebaseConfig = {
 
 const DEMO = firebaseConfig.apiKey === "YOUR_API_KEY";   // demo mode = no Firebase, sample data only
 let fb = {}, auth, db;
-if (!DEMO) {
+if (!DEMO) try {
   const V = "https://www.gstatic.com/firebasejs/10.12.2/";
   const [a, f, ap] = await Promise.all([import(V+"firebase-auth.js"), import(V+"firebase-firestore.js"), import(V+"firebase-app.js")]);
   fb = { ...a, ...f };
   const app = ap.initializeApp(firebaseConfig);
   auth = a.getAuth(app); db = f.getFirestore(app);
-}
+} catch(e) { showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); throw e; }
 
 const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
@@ -210,12 +215,13 @@ function render(){
 /* ---------- Data (Firestore) ---------- */
 function subscribe(uid){
   const {doc,collection,query,where,orderBy,limit,onSnapshot} = fb;
+  const onS = (r,cb) => onSnapshot(r,cb,e=>showErr(e.code+": "+e.message));
   unsubs.forEach(u=>u()); unsubs=[
-    onSnapshot(doc(db,"users",uid), s=>{ S.profile = s.data()||{}; render(); }),
-    onSnapshot(collection(db,"users",uid,"wallets"), s=>{ S.wallets = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
-    onSnapshot(query(collection(db,"buyOrders"),where("status","==","open")), s=>{ S.orders = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
-    onSnapshot(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); }),
-    onSnapshot(query(collection(db,"users",uid,"ledger"),orderBy("createdAt","desc"),limit(100)), s=>{
+    onS(doc(db,"users",uid), s=>{ S.profile = s.data()||{}; render(); }),
+    onS(collection(db,"users",uid,"wallets"), s=>{ S.wallets = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
+    onS(query(collection(db,"buyOrders"),where("status","==","open")), s=>{ S.orders = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
+    onS(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); }),
+    onS(query(collection(db,"users",uid,"ledger"),orderBy("createdAt","desc"),limit(100)), s=>{
       S.ledger = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,when:(x.createdAt?.toDate?.()||new Date()).toLocaleString()}; }); render(); })
   ];
 }
@@ -229,11 +235,4 @@ async function doAuth(){
       const c = await fb.createUserWithEmailAndPassword(auth,email,pw);
       await fb.setDoc(fb.doc(db,"users",c.user.uid),{phone:$("#ph").value.trim(),email,balance:0,code:Math.random().toString(36).slice(2,8),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()});
     } else await fb.signInWithEmailAndPassword(auth,email,pw);
-  }catch(e){ S.err = e.code==="auth/invalid-credential"?"Wrong email or password.":e.code==="auth/email-already-in-use"?"This email is already registered. Log in instead.":e.code==="auth/weak-password"?"Password must be at least 6 characters.":e.message; render(); }
-}
-
-function addWalletSheet(){
-  const m=document.createElement("div"); m.className="modal";
-  m.innerHTML=`<div class="sheet"><h2>Add Wallet</h2><select id="wt"><option value="bkash">bKash</option><option value="nagad">Nagad</option></select><input id="wn" type="tel" placeholder="Wallet number (01XXXXXXXXX)"><div class="err" id="we"></div><button class="btn" style="margin-top:16px" id="ws">Save wallet</button><button class="btn out" style="margin-top:10px" id="wc">Cancel</button></div>`;
-  document.body.append(m);
-  $("#wc").on
+  }catch(e){ S.err = e.code==="auth/invalid-credential"?"Wrong email or password.":e.code==="a
