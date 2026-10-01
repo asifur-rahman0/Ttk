@@ -127,7 +127,7 @@ const IC = {
 };
 const logo = t => `<div class="logo ${t==="bkash"?"bk":"ng"}">${t==="bkash"?"bK":"ন"}</div>`;
 
-const head = title => `<header><h1>${title}</h1><span class="chip">v85</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
+const head = title => `<header><h1>${title}</h1><span class="chip">v86</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
 
 /* ---------- Screens ---------- */
 function home(){
@@ -203,6 +203,7 @@ function teamView(){
   return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">My Team</h1></header>
   <div class="hero"><div class="sub">Your referral code</div><div class="big">${esc(S.profile.code||"...")}</div>
     <div class="sub" style="word-break:break-all;margin-top:8px">${esc(link)}</div>
+    ${S.codeOk===true ? `<div class="sub" style="color:var(--g);margin-top:8px">Link active</div>` : S.codeOk===false ? `<div class="err">Link not active (${esc(S.codeErr)}). Publish the latest Firestore rules, then reload.</div>` : `<div class="sub" style="margin-top:8px">Checking link...</div>`}
     <div class="flex" style="margin-top:14px"><button class="btn sm" data-copylink>Copy link</button><button class="btn sm out" data-sharelink>Share</button></div></div>
   <div class="card flex"><div class="sp sub">Team members</div><b style="font-size:26px">${S.team.length}</b></div>
   ${S.team.length ? S.team.map(m=>`<div class="card flex"><div class="logo" style="background:var(--teal);border-radius:50%">${esc((m.name||"?")[0])}</div><div class="sp"><div style="font-size:17px;font-weight:600">${esc(m.name)}</div><div class="sub">Joined ${esc(m.when)}</div></div></div>`).join("") : `<div class="empty">No members yet. Share your link to invite people.</div>`}`;
@@ -239,7 +240,7 @@ function subscribe(uid){
     onS(doc(db,"users",uid), s=>{
       S.profile = s.data()||{}; render();
       if(s.exists() && s.data().code && !S.codeChecked){ S.codeChecked = true; ensureCode(uid, s.data().code); }
-      if(!s.exists() && !s.metadata.fromCache && !S.creating){
+      if(!s.exists() && !s.metadata.fromCache && !S.creating && !S.registering){
         S.creating = true;
         fb.setDoc(doc(db,"users",uid),{phone:"",email:S.user?.email||"",balance:0,code:rnd6(),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()})
           .catch(e=>showErr("Profile create failed: "+e.code)).finally(()=>{ S.creating=false; });
@@ -259,29 +260,53 @@ async function ensureCode(uid, code){
   try{
     const r = await fb.getDoc(fb.doc(db,"referralCodes",code));
     if(!r.exists()) await fb.setDoc(fb.doc(db,"referralCodes",code),{uid});
-  }catch(e){ console.warn("ensureCode", e.code); }
+    else if(r.data().uid !== uid){ S.codeOk = false; S.codeErr = "code-taken"; render(); return; }
+    S.codeOk = true;
+  }catch(e){ S.codeOk = false; S.codeErr = e.code || e.message; }
+  render();
+}
+
+function autoProfile(uid){
+  if(S.creating) return;
+  S.creating = true;
+  fb.setDoc(fb.doc(db,"users",uid),{phone:"",email:S.user?.email||"",balance:0,code:rnd6(),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()})
+    .catch(e=>showErr("Profile create failed: "+e.code)).finally(()=>{ S.creating=false; });
 }
 
 async function register(email, pw){
   const phone = $("#ph").value.trim(), refCode = ($("#rc")?.value || "").trim();
-  const c = await fb.createUserWithEmailAndPassword(auth, email, pw);
-  const uid = c.user.uid;
-  let code = "";
-  for(let i=0;i<6 && !code;i++){
-    const x = rnd6();
-    try{ const r = await fb.getDoc(fb.doc(db,"referralCodes",x)); if(!r.exists()) code = x; }catch{ code = x; }
-  }
-  let refUid = null;
-  if(refCode){
-    try{ const r = await fb.getDoc(fb.doc(db,"referralCodes",refCode)); if(r.exists() && r.data().uid !== uid) refUid = r.data().uid; }catch(e){ console.warn("ref lookup", e.code); }
-  }
-  const prof = {phone,email,balance:0,code,saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()};
-  if(refUid) prof.referredBy = refUid;
-  const b = fb.writeBatch(db);
-  b.set(fb.doc(db,"users",uid), prof);
-  b.set(fb.doc(db,"referralCodes",code), {uid});
-  if(refUid) b.set(fb.doc(db,"users",refUid,"team",uid), {name:maskName(phone,email), joinedAt:fb.serverTimestamp()});
-  await b.commit();
+  S.registering = true;
+  let uid = null;
+  try{
+    const c = await fb.createUserWithEmailAndPassword(auth, email, pw);
+    uid = c.user.uid;
+    let code = "";
+    for(let i=0;i<6 && !code;i++){
+      const x = rnd6();
+      try{ const r = await fb.getDoc(fb.doc(db,"referralCodes",x)); if(!r.exists()) code = x; }catch{ code = x; }
+    }
+    let refUid = null, note = "";
+    if(refCode){
+      try{
+        const r = await fb.getDoc(fb.doc(db,"referralCodes",refCode));
+        if(!r.exists()) note = "Referral code not found. The referrer must log in once with the latest app, or ask admin to link you.";
+        else if(r.data().uid === uid) note = "You cannot use your own code.";
+        else refUid = r.data().uid;
+      }catch(e){ note = "Referral lookup failed ("+(e.code||e.message)+"). Publish the latest Firestore rules."; }
+    }
+    const prof = {phone,email,balance:0,code,saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()};
+    if(refUid) prof.referredBy = refUid;
+    const b = fb.writeBatch(db);
+    b.set(fb.doc(db,"users",uid), prof);
+    b.set(fb.doc(db,"referralCodes",code), {uid});
+    if(refUid) b.set(fb.doc(db,"users",refUid,"team",uid), {name:maskName(phone,email), joinedAt:fb.serverTimestamp()});
+    await b.commit();
+    if(note) showErr(note);
+  }catch(e){
+    S.registering = false;
+    if(uid){ showErr("Account created but profile data failed: "+(e.code||e.message)+". Publish the latest Firestore rules."); autoProfile(uid); }
+    throw e;
+  }finally{ S.registering = false; }
 }
 
 async function doAuth(){
@@ -396,7 +421,7 @@ if(!DEMO){
       READY = true;
     }catch(e){ showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); return; }
     fb.onAuthStateChanged(auth,u=>{
-      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.team=[];
+      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[];
       render();
       if(u) subscribe(u.uid);
     });
