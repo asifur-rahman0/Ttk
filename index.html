@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nerivo</title>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
 <style>
 :root{--g:#0b7a55;--gd:#0a3d2e;--teal:#00a99d;--mint:#e6f4ec;--mint2:#dbf0e4;--line:#d9e2de;--mute:#7d8b86;--ink:#10231d;--bg:#fff}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
@@ -57,10 +60,11 @@ a.lnk{color:var(--g);text-decoration:underline;cursor:pointer}
 <div id="app"><p style="padding:40px 20px;color:#7d8b86">Loading...</p></div>
 
 <script>
-function showErr(m){var d=document.getElementById('errbar')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'errbar'}));d.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;padding:12px 16px;font-size:13px;z-index:99;word-break:break-word';d.textContent='Error: '+m;}
+var __errs=[];
+function showErr(m){__errs.push(String(m));if(__errs.length>3)__errs.shift();var d=document.getElementById('errbar')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'errbar'}));d.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;padding:12px 16px;font-size:13px;z-index:99;word-break:break-word';d.textContent='Error: '+__errs.join(' | ');}
 addEventListener('error',function(e){showErr(e.message)});
 addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.message)||e.reason)});
-setTimeout(function(){var a=document.getElementById('app')||document.getElementById('root');if(a&&a.textContent.trim()==='Loading...')showErr('Still loading after 8 seconds. Check internet connection and that Firestore Database is created.')},8000);
+setTimeout(function(){var a=document.getElementById('app');if(a&&a.textContent.trim()==='Loading...')showErr('The app script has not started after 8 seconds. The page is probably still downloading on a slow network. Wait a little or reload.')},8000);
 </script>
 <script type="module">
 /* ============ 1) Paste your Firebase config here (Firebase Console > Project settings) ============ */
@@ -93,6 +97,8 @@ const maskName = (ph, em) => (ph && ph.length >= 8) ? ph.slice(0,4) + "****" + p
 const RANGES = [[100,199],[200,1000],[1000,4000],[4000,10000],[10000,99999]];
 const RLAB = ["100 - 199","200 - 1K","1K - 4K","4K - 10K","10K+"];
 let unsubs = [];
+const T0 = Date.now();
+const setStatus = t => { S.status = t; if(!READY && !S.user) render(); };
 
 const demoData = () => {
   S.profile = { phone:"+880 184****059", balance:13.63, code:"WcLvJ8", statsDate:todayStr(), saleAmount:45222, saleOrders:39, purchaseAmount:0, purchaseOrders:0, income:1245.46 };
@@ -121,7 +127,7 @@ const IC = {
 };
 const logo = t => `<div class="logo ${t==="bkash"?"bk":"ng"}">${t==="bkash"?"bK":"ন"}</div>`;
 
-const head = title => `<header><h1>${title}</h1><span class="chip">v84</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
+const head = title => `<header><h1>${title}</h1><span class="chip">v85</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
 
 /* ---------- Screens ---------- */
 function home(){
@@ -203,17 +209,8 @@ function teamView(){
 }
 
 function authView(){
-  if(!DEMO && !READY) return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:14px;font-size:16px">Connecting to server... A slow network can take up to a minute.</p></div>`;
+  if(!DEMO && !READY) return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:14px;font-size:16px">Connecting to server... ${Math.round((Date.now()-T0)/1000)}s</p><p class="sub" style="margin-top:8px">${esc(S.status||"Starting...")}</p><p class="sub" style="margin-top:8px">A slow network can take up to a minute. If it stays stuck, reload.</p><button class="btn" style="margin-top:20px" onclick="location.reload()">Reload</button></div>`;
   const reg = S.authMode==="register";
   return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:6px">${reg?"Create your account":"Log in to continue"}</p>
   ${DEMO?`<p class="sub" style="margin-top:12px;color:var(--g)">Demo mode: Firebase is not set up yet. Tap the button to preview.</p>`:""}
-  <input id="em" type="email" placeholder="Email" autocomplete="email"><input id="pw" type="password" placeholder="Password (6+ characters)" autocomplete="${reg?"new-password":"current-password"}">
-  ${reg?`<input id="ph" type="tel" placeholder="Phone number"><input id="rc" placeholder="Referral code (optional)" value="${esc(REF)}">`:""}
-  <div class="err">${S.err}</div>
-  <button class="btn" style="margin-top:16px" data-auth>${reg?"Create account":"Log in"}</button>
-  <p class="sub" style="text-align:center;margin-top:18px">${reg?"Have an account?":"New here?"} <a class="lnk" data-mode>${reg?"Log in":"Create account"}</a></p></div>`;
-}
-
-function nav(){
-  const b=(k,l)=>`<button class="${S.tab===k?"act":""}" data-tab="${k}">${IC[k]}<span>${l}</span></button>`;
-  return `<nav>${b("home","Home")}${b("buy","
+  <input id="em" type="email" placeholder="Email" autocomplete="email"><input 
