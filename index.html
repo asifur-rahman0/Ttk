@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nerivo</title>
+<style>
+:root{--g:#0b7a55;--gd:#0a3d2e;--teal:#00a99d;--mint:#e6f4ec;--mint2:#dbf0e4;--line:#d9e2de;--mute:#7d8b86;--ink:#10231d;--bg:#fff}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{font-family:"Segoe UI",Roboto,system-ui,sans-serif;background:#eef2f0;color:var(--ink);display:flex;justify-content:center}
+#app{width:100%;max-width:480px;min-height:100vh;background:var(--bg);position:relative;padding:0 16px 120px}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input,select{font:inherit;width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:14px;margin-top:10px;background:#fff}
+header{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 22px) 0 16px}
+header h1{flex:1;font-size:30px;font-weight:700;color:var(--gd)}
+.chip{background:var(--mint);border-radius:20px;padding:10px 16px;font-size:15px;color:var(--gd)}
+.hero{background:linear-gradient(135deg,var(--mint),var(--mint2));border-radius:24px;padding:22px}
+.hero h2{font-size:22px}.sub{color:var(--mute);font-size:14px;margin-top:4px}
+.card{border:1px solid var(--line);border-radius:22px;padding:16px;margin-top:14px;background:#fff}
+.card.on{background:#f0faf5;border-color:#bfe3d0}.card.off{background:#f2f4f8}
+.list{background:var(--mint);border-radius:22px;margin-top:14px;padding:4px 14px}
+.row{display:flex;align-items:center;gap:14px;padding:18px 4px;width:100%;text-align:left;font-size:18px}
+.row+.row{border-top:1px solid var(--line)}.row span:nth-child(2){flex:1}
+.tile{background:#fafcfb;border-radius:16px;padding:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.big{font-size:26px;font-weight:700;margin:4px 0}
+.pill{display:inline-block;background:#fff;border-radius:20px;padding:10px 18px;margin:14px 8px 0 0;color:var(--gd)}
+.btn{background:var(--g);color:#fff;border-radius:16px;padding:16px;font-size:17px;width:100%}
+.btn.out{background:#fff;color:var(--g);border:1.5px solid var(--g)}
+.btn.sm{width:auto;padding:14px 22px;font-size:15px}
+.seg{display:flex;gap:10px;margin-top:16px}
+.seg button{flex:1;border-radius:30px;padding:16px;background:#fff;color:var(--mute);font-size:18px}
+.seg button.act{background:var(--teal);color:#fff}
+.ranges{display:flex;gap:10px;overflow-x:auto;padding:16px 0 4px;scrollbar-width:none}
+.ranges button{border:1.5px solid var(--line);border-radius:14px;padding:10px 16px;white-space:nowrap;font-size:17px;color:var(--mute)}
+.ranges button.act{background:var(--g);color:#fff;border-color:var(--g)}
+.logo{width:54px;height:54px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;flex:none}
+.bk{background:#e2136e}.ng{background:#ee4023}
+.stats{display:flex;flex:1;background:#f8faf9;border-radius:14px;padding:10px 4px;text-align:center;font-size:12px;color:var(--mute)}
+.stats div{flex:1}.stats b{display:block;font-size:15px;color:var(--ink)}
+.flex{display:flex;align-items:center;gap:12px}.sp{flex:1}
+.tag{border-radius:16px;padding:6px 14px;font-size:14px;background:#fff}
+nav{position:fixed;bottom:0;width:100%;max-width:480px;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr 1.1fr 1fr 1fr;padding:8px 6px calc(env(safe-area-inset-bottom,0px) + 10px)}
+nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:14px;color:var(--mute);padding:8px 0;border-radius:24px}
+nav button.act{background:var(--mint);color:var(--gd);font-weight:700}
+nav .gift{background:#fff;width:76px;height:76px;border-radius:50%;margin:-40px auto 0;border:4px solid var(--g);display:grid;place-items:center;font-size:32px;padding:0;box-shadow:0 2px 12px #0002}
+.empty{text-align:center;color:var(--mute);padding:40px 10px}
+.toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:var(--gd);color:#fff;padding:12px 20px;border-radius:24px;font-size:15px;z-index:9}
+.modal{position:fixed;inset:0;background:#0006;display:grid;place-items:end center;z-index:8}
+.sheet{background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom,0px) + 22px)}
+.auth{padding-top:15vh}.auth h1{font-size:38px;color:var(--gd)}.err{color:#c0392b;font-size:14px;margin-top:10px}
+a.lnk{color:var(--g);text-decoration:underline;cursor:pointer}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+</style>
+</head>
+<body>
+<div id="app"><p style="padding:40px 20px;color:#7d8b86">Loading...</p></div>
+
+<script>
+function showErr(m){var d=document.getElementById('errbar')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'errbar'}));d.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;padding:12px 16px;font-size:13px;z-index:99;word-break:break-word';d.textContent='Error: '+m;}
+addEventListener('error',function(e){showErr(e.message)});
+addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.message)||e.reason)});
+setTimeout(function(){var a=document.getElementById('app')||document.getElementById('root');if(a&&a.textContent.trim()==='Loading...')showErr('Still loading after 8 seconds. Check internet connection and that Firestore Database is created.')},8000);
+</script>
+<script type="module">
+/* ============ 1) Paste your Firebase config here (Firebase Console > Project settings) ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyCWX-SgIhFjVAsi4REfJ7ZAlikg3x2DZZw",
+  authDomain: "chatting-e498d.firebaseapp.com",
+  projectId: "chatting-e498d",
+  storageBucket: "chatting-e498d.firebasestorage.app",
+  messagingSenderId: "765847410526",
+  appId: "1:765847410526:web:420422de2045d4255c21cf",
+  measurementId: "G-9FKGHT0TXT"
+};
+/* ================================================================================================= */
+
+const DEMO = firebaseConfig.apiKey === "YOUR_API_KEY";   // demo mode = no Firebase, sample data only
+let fb = {}, auth, db;
+if (!DEMO) try {
+  const V = "https://www.gstatic.com/firebasejs/10.12.2/";
+  const [a, f, ap] = await Promise.all([import(V+"firebase-auth.js"), import(V+"firebase-firestore.js"), import(V+"firebase-app.js")]);
+  fb = { ...a, ...f };
+  const app = ap.initializeApp(firebaseConfig);
+  auth = a.initializeAuth(app, { persistence: [a.indexedDBLocalPersistence, a.browserLocalPersistence, a.inMemoryPersistence] }); db = f.initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+} catch(e) { showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); throw e; }
+
+const $ = s => document.querySelector(s);
+const fmt = n => Number(n || 0).toFixed(2);
+const todayStr = () => new Date().toLocaleDateString("en-CA");
+const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
+const S = { tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"" };
+const RANGES = [[100,199],[200,1000],[1000,4000],[4000,10000],[10000,99999]];
+const RLAB = ["100 - 199","200 - 1K","1K - 4K","4K - 10K","10K+"];
+let unsubs = [];
+
+const demoData = () => {
+  S.profile = { phone:"+880 184****059", balance:13.63, code:"WcLvJ8", statsDate:todayStr(), saleAmount:45222, saleOrders:39, purchaseAmount:0, purchaseOrders:0, income:1245.46 };
+  S.wallets = [{id:"1",type:"bkash",number:"01828975671",balance:0,online:false},{id:"2",type:"nagad",number:"01828975671",balance:5628.82,online:true}];
+  S.orders = [{id:"a",amount:111,type:"bkash",mask:"179***7kPO",rate:3,cancels:0},{id:"b",amount:104,type:"bkash",mask:"179***USsO",rate:3,cancels:0},{id:"c",amount:110,type:"nagad",mask:"179***q0HO",rate:3,cancels:0}];
+};
+
+const toast = m => { const t = document.createElement("div"); t.className="toast"; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),2200); };
+const svg = p => `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const IC = {
+  home:svg('<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'),
+  buy:svg('<rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M7 15h4"/>'),
+  sell:svg('<rect x="4" y="7" width="16" height="13" rx="3"/><path d="M8 7V4h8v3"/>'),
+  mine:svg('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'),
+  right:svg('<path d="M9 6l6 6-6 6"/>'),
+  sync:svg('<path d="M21 12a9 9 0 0 1-15 6.7L3 16M3 12a9 9 0 0 1 15-6.7L21 8M3 21v-5h5M21 3v5h-5"/>'),
+  help:svg('<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.300c-.7.4-1 1-1 1.700M12 17h.01"/>'),
+  doc:svg('<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/>'),
+  wallet:svg('<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M16 13h2M3 10h18"/>'),
+  team:svg('<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.500"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 15c3 0 5 1.500 5 4"/>'),
+  globe:svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'),
+  award:svg('<circle cx="12" cy="9" r="6"/><path d="M8 14l-2 7 6-3 6 3-2-7"/>'),
+  power:svg('<path d="M12 3v9M6.400 6.500a8 8 0 1 0 11.200 0"/>'),
+  head:svg('<path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v5H5a1 1 0 0 1-1-1zM20 14h-3v5h2a1 1 0 0 0 1-1z"/>')
+};
+const logo = t => `<div class="logo ${t==="bkash"?"bk":"ng"}">${t==="bkash"?"bK":"ন"}</div>`;
+
+const head = title => `<header><h1>${title}</h1><span class="chip">v82</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
+
+/* ---------- Screens ---------- */
+function home(){
+  const p = todayProfile();
+  return head("Home") + `
+  <div class="hero" style="background:linear-gradient(120deg,#00a99d,#1565c0);color:#fff;padding:26px">
+    <div style="font-size:26px;font-weight:800">NERIVO</div>
+    <div style="font-size:22px;font-weight:700;margin-top:8px">Smart automatic income</div>
+    <div style="margin-top:6px;opacity:.9">Wallet online. Rewards calculated daily.</div>
+  </div>
+  <div class="list" style="padding:16px"><h2 style="font-size:22px;font-weight:600">Today's trading</h2>
+    <div class="grid2"><div class="tile"><div class="sub">Sale amount</div><div class="big">${fmt(p.saleAmount)} BDT</div><div class="sub">Sale orders ${p.saleOrders||0}</div></div>
+    <div class="tile"><div class="sub">Purchase amount</div><div class="big">${fmt(p.purchaseAmount)} BDT</div><div class="sub">Purchase orders ${p.purchaseOrders||0}</div></div></div>
+    <div class="tile flex" style="margin-top:12px;color:var(--g)">${IC.award}<b style="flex:1;font-weight:600">Today's income</b><b style="font-size:22px">${fmt(p.income)} BDT</b></div></div>
+  <div class="list" style="padding:16px"><h2 style="font-size:22px;font-weight:600">Rates &amp; Rewards</h2>
+    <div class="grid2"><div class="tile"><div class="sub">USDT exchange</div><div class="big" style="font-size:20px">1 USDT ≈ ${fmt(S.rates.usdt)} BDT</div></div>
+    <div class="tile"><div class="sub">USDT bonus</div><div class="big" style="font-size:20px;color:var(--g)">${S.rates.bonus}%</div></div></div></div>
+  <h2 style="font-size:26px;margin:24px 0 4px">Tutorials</h2>
+  ${["Buy USDT|How to buy USDT","Add nagad wallet|Tutorial"].map(t=>{const [a,b]=t.split("|");return `<div class="card flex"><div class="logo" style="background:var(--teal);width:70px;height:70px">▶</div><div class="sp"><div style="font-size:20px">${a}</div><div class="sub" style="font-size:17px">Tutorial</div></div>${IC.right}</div>`}).join("")}`;
+}
+
+function buy(){
+  const [lo,hi] = RANGES[S.range];
+  const list = S.cur==="USDT" ? [] : S.orders.filter(o=>o.amount>=lo && o.amount<=hi);
+  return head("Buy") + `
+  <div class="hero"><div class="flex"><div class="sp"><h2>Buy Platform Balance</h2><div class="sub" style="font-size:16px">Choose amount and wallet.</div></div><button class="flex" style="color:var(--g)" data-go="purchases">${IC.wallet} Purchase records</button></div>
+    <div class="seg" style="margin-top:14px"><button class="${S.cur==="BDT"?"act":""}" data-cur="BDT">BDT</button><button class="${S.cur==="USDT"?"act":""}" data-cur="USDT">USDT</button></div></div>
+  <div class="ranges">${RLAB.map((l,i)=>`<button class="${i===S.range?"act":""}" data-range="${i}">${l}</button>`).join("")}</div>
+  ${list.length ? list.map(o=>`<div class="card"><div class="flex">${logo(o.type)}<div class="sp"><div class="big" style="margin:0;font-size:28px">${fmt(o.amount)} BDT</div><div class="sub" style="font-size:17px">${o.type}</div></div><span class="sub">${o.mask}</span></div>
+    <div class="flex" style="margin-top:12px"><div class="stats"><div><b>+${fmt(o.amount*o.rate/100)} BDT</b>Reward</div><div><b>${fmt(o.rate)}%</b>Reward rate</div><div><b>${o.cancels}</b>Cancellations</div></div>
+    <button class="btn sm" style="padding:22px 18px;font-size:14px" data-claim="${o.id}">Claim purchase order</button></div></div>`).join("")
+   : `<div class="empty">No orders in this range yet. Try another amount.</div>`}`;
+}
+
+function sell(){
+  const on = S.wallets.filter(w=>w.online).length;
+  return head("Sell") + `
+  <div class="hero"><div class="flex"><div class="sp"><h2 style="font-size:26px">Wallet Services</h2><div class="sub" style="font-size:16px">Manage connected wallets.</div></div><button class="flex" style="color:var(--g)" data-go="collections">${IC.wallet} Collection Records</button></div>
+    <span class="pill">${S.wallets.length} connected</span><span class="pill">${on} online</span></div>
+  ${S.wallets.length ? S.wallets.map(w=>`<div class="card ${w.online?"on":"off"}"><div class="flex">${logo(w.type)}<div class="sp"><div style="font-size:26px;font-weight:600">${w.type}</div><div class="sub" style="font-size:19px">${w.number}</div></div>
+    <span class="tag">${w.online?"Online":"Offline"}</span><button style="color:var(--g)" data-sync="${w.id}">${IC.sync}</button></div>
+    <div class="flex" style="margin-top:14px;padding-bottom:14px;border-bottom:1px solid var(--line)"><div class="big sp" style="font-size:30px">${fmt(w.balance)} BDT</div>
+    <button class="btn sm ${w.online?"out":""}" style="min-width:150px;padding:18px" data-toggle="${w.id}">${w.online?"Go offline":"Start collection"}</button></div>
+    <div class="flex" style="justify-content:space-around;margin-top:14px;color:var(--gd)"><span>↙ Collect</span><span>↗ Pay</span><span>Today</span></div></div>`).join("")
+   : `<div class="empty">No wallets yet. Add one to start collecting.</div>`}
+  <button class="btn" style="margin-top:40px;font-size:22px" data-add>Add Wallet</button>`;
+}
+
+function mine(){
+  const p = S.profile;
+  const item=(i,t,go)=>`<button class="row" data-go="${go}"><span style="color:var(--g)">${IC[i]}</span><span>${t}</span><span style="color:var(--mute)">${IC.right}</span></button>`;
+  return head("Mine") + `
+  <div class="hero flex" style="padding:34px 22px"><div class="logo" style="width:84px;height:84px;border-radius:50%;background:#3a2c4a;font-size:34px">🧔</div>
+    <div><div style="font-size:26px;font-weight:600">${p.phone||S.user?.email||""}</div><div style="font-size:30px;font-weight:700;margin-top:8px">${fmt(p.balance)} BDT</div></div></div>
+  <button class="card row" style="margin-top:14px" data-go="balance"><span style="color:var(--g)">${IC.doc}</span><span>Balance Details</span></button>
+  <div class="grid2"><button class="card row" style="margin:0" data-go="team"><span style="color:var(--g)">${IC.team}</span><span>My Team</span></button>
+  <button class="card row" style="margin:0" data-go="lang"><span style="color:var(--g)">${IC.globe}</span><span>Language<br><small class="sub">English</small></span></button></div>
+  <div class="list">${item("doc","Order History","orders")}${item("wallet","More Payment Options","pay")}${item("head","Live Support","support")}</div>
+  <div class="list">${item("help","Common Questions","faq")}${item("award","New Rewards","rewards")}<button class="row" data-logout><span style="color:var(--g)">${IC.power}</span><span>Log out</span><span style="color:var(--mute)">${IC.right}</span></button></div>`;
+}
+
+function ledgerView(){
+  const isOrders = S.view === "orders";
+  const rows = S.ledger.filter(l => !isOrders || l.kind === "purchase");
+  const label = l => l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
+  return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">${isOrders ? "Order History" : "Balance Details"}</h1></header>
+  <div class="hero"><div class="sub">Current balance</div><div class="big">${fmt(S.profile.balance)} BDT</div><div class="sub">Today's earning: ${fmt(todayProfile().income)} BDT</div></div>
+  ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:16px;font-weight:600">${label(l)}</div><div class="sub">${l.when}</div></div><b style="color:var(--g);font-size:19px">+${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet. Claim an order to see it here.</div>`}`;
+}
+
+function authView(){
+  const reg = S.authMode==="register";
+  return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:6px">${reg?"Create your account":"Log in to continue"}</p>
+  ${DEMO?`<p class="sub" style="margin-top:12px;color:var(--g)">Demo mode: Firebase is not set up yet. Tap the button to preview.</p>`:""}
+  <input id="em" type="email" placeholder="Email" autocomplete="email"><input id="pw" type="password" placeholder="Password (6+ characters)" autocomplete="${reg?"new-password":"current-password"}">
+  ${reg?`<input id="ph" type="tel" placeholder="Phone number">`:""}
+  <div class="err">${S.err}</div>
+  <button class="btn" style="margin-top:16px" data-auth>${reg?"Create account":"Log in"}</button>
+  <p class="sub" style="text-align:center;margin-top:18px">${reg?"Have an account?":"New here?"} <a class="lnk" data-mode>${reg?"Log in":"Create account"}</a></p></div>`;
+}
+
+function nav(){
+  const b=(k,l)=>`<button class="${S.tab===k?"act":""}" data-tab="${k}">${IC[k]}<span>${l}</span></button>`;
+  return `<nav>${b("home","Home")}${b("buy","Buy")}<button class="gift" data-tab="home" aria-label="Rewards">🎁</button>${b("sell","Sell")}${b("mine","Mine")}</nav>`;
+}
+
+function render(){
+  const app = $("#app");
+  if(!S.user){ app.innerHTML = authView(); return; }
+  app.innerHTML = (S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav();
+}
+
+/* ---------- Data (Firestore) ---------- */
+function subscribe(uid){
+  const {doc,collection,query,where,orderBy,limit,onSnapshot} = fb;
+  const onS = (r,cb) => onSnapshot(r,cb,e=>showErr(e.code+": "+e.message));
+  unsubs.forEach(u=>u()); unsubs=[
+    onS(doc(db,"users",uid), s=>{ S.profile = s.data()||{}; render(); }),
+    onS(collection(db,"users",uid,"wallets"), s=>{ S.wallets = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
+    onS(query(collection(db,"buyOrders"),where("status","==","open")), s=>{ S.orders = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
+    onS(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); }),
+    onS(query(collection(db,"users",uid,"ledger"),orderBy("createdAt","desc"),limit(100)), s=>{
+      S.ledger = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,when:(x.createdAt?.toDate?.()||new Date()).toLocaleString()}; }); render(); })
+  ];
+}
+
+async function doAuth(){
+  const email=$("#em").value.trim(), pw=$("#pw").value;
+  S.err="";
+  if(DEMO){ S.user={email:email||"demo@nerivo.app"}; demoData(); render(); return; }
+  try{
+    if(S.authMode==="register"){
+      const c = await fb.createUserWithEmailAndPassword(auth,email,pw);
+      await fb.setDoc(fb.doc(db,"users",c.user.uid),{phone:$("#ph").value.trim(),email,balance:0,code:Math.random().toString(36).slice(2,8),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()});
+    } else await fb.signInWithEmailAndPassword(auth,email,pw);
+  }catch(e){ S.err = e.code==="auth/invalid-credential"?"Wrong email or password.":e.code==="auth/email-already-in-use"?"This email is already registered. Log in instead.":e.code==="auth/weak-password"?"Password must be at least 6 characters.":e.message; render(); }
+}
+
+function addWalletSheet(){
+  const m=document.createElement("div"); m.className="modal";
+  m.innerHTML=`<div class="sheet"><h2>Add Wallet</h2><select id="wt"><option value="bkash">bKash</option><option value="nagad">Nagad</option></select><input id="wn" type="tel" placeholder="Wallet number (01XXXXXXXXX)"><div class="err" id="we"></div><button class="btn" style="margin-top:16px" id="ws">Save wallet</button><button class="btn out" style="margin-top:10px" id="wc">Cancel</button></div>`;
+  document.body.append(m);
+  $("#wc").onclick=()=>m.remove();
+  $("#ws").onclick=async()=>{
+    const type=$("#wt").value, number=$("#wn").value.trim();
+    if(!/^01\d{9}$/.test(number)){ $("#we").textContent="Enter an 11-digit number starting with 01."; return; }
+    const w={type,number,balance:0,online:false};
+    if(DEMO) S.wallets.push({id:String(Date.now()),...w});
+    else await fb.addDoc(fb.collection(db,"users",S.user.uid,"wallets"),w);
+    m.remove(); render(); toast("Wallet added");
+  };
+}
+
+async function toggleWallet(id){
+  const w=S.wallets.find(x=>x.id===id); w.online=!w.online;
+  if(!DEMO) await fb.updateDoc(fb.doc(db,"users",S.user.uid,"wallets",id),{online:w.online});
+  render(); toast(w.online?"Collection started":"Wallet offline");
+}
+
+function demoClaim(o){
+  const p=S.profile, fresh=p.statsDate!==todayStr(), r=o.amount*o.rate/100, when=new Date().toLocaleString();
+  p.balance=(p.balance||0)+o.amount; p.income=(fresh?0:(p.income||0))+r;
+  p.purchaseAmount=(fresh?0:(p.purchaseAmount||0))+o.amount; p.purchaseOrders=(fresh?0:(p.purchaseOrders||0))+1; p.statsDate=todayStr();
+  S.ledger.unshift({id:o.id+"_reward",kind:"reward",amount:r,when},{id:o.id+"_buy",kind:"purchase",amount:o.amount,when});
+}
+
+async function claim(id){
+  const o=S.orders.find(x=>x.id===id); if(!o||S.claiming) return;
+  S.claiming=true;
+  try{
+    if(DEMO){ demoClaim(o); S.orders=S.orders.filter(x=>x.id!==id); }
+    else {
+      await fb.runTransaction(db, async t=>{
+        const oRef=fb.doc(db,"buyOrders",id), uRef=fb.doc(db,"users",S.user.uid);
+        const [os,us]=await Promise.all([t.get(oRef),t.get(uRef)]);
+        if(!os.exists()||os.data().status!=="open") throw new Error("taken");
+        const od=os.data(), u=us.data()||{}, day=todayStr(), fresh=u.statsDate!==day, reward=od.amount*od.rate/100;
+        t.update(oRef,{status:"claimed",claimedBy:S.user.uid,claimedAt:fb.serverTimestamp()});
+        t.update(uRef,{
+          balance:(u.balance||0)+od.amount,
+          income:(fresh?0:(u.income||0))+reward,
+          purchaseAmount:(fresh?0:(u.purchaseAmount||0))+od.amount,
+          purchaseOrders:(fresh?0:(u.purchaseOrders||0))+1,
+          statsDate:day, lastClaim:id });
+        const L=fb.collection(db,"users",S.user.uid,"ledger");
+        t.set(fb.doc(L,id+"_buy"),{kind:"purchase",amount:od.amount,orderId:id,createdAt:fb.serverTimestamp()});
+        t.set(fb.doc(L,id+"_reward"),{kind:"reward",amount:reward,orderId:id,createdAt:fb.serverTimestamp()});
+      });
+    }
+    toast("Order claimed. Balance updated");
+  }catch(e){ console.error(e); toast(e.message==="taken"?"Someone else claimed this order":"Could not claim order"); }
+  S.claiming=false; render();
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("click", async e=>{
+  const t=e.target.closest("button,a"); if(!t) return;
+  const d=t.dataset;
+  if("tab" in d){ S.tab=d.tab; S.view=null; render(); scrollTo(0,0); }
+  else if("back" in d){ S.view=null; render(); }
+  else if("cur" in d){ S.cur=d.cur; render(); }
+  else if("range" in d){ S.range=+d.range; render(); }
+  else if("claim" in d) claim(d.claim);
+  else if("toggle" in d) toggleWallet(d.toggle);
+  else if("sync" in d) toast("Balance refreshed");
+  else if("add" in d) addWalletSheet();
+  else if("copy" in d){ try{ await navigator.clipboard.writeText(S.profile.code||""); toast("Code copied"); }catch{ toast(S.profile.code||""); } }
+  else if("go" in d){ if(d.go==="balance"||d.go==="orders"){ S.view=d.go; render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
+  else if("mode" in d){ S.authMode=S.authMode==="login"?"register":"login"; S.err=""; render(); }
+  else if("auth" in d) doAuth();
+  else if("logout" in d){ if(DEMO){ S.user=null; render(); } else await fb.signOut(auth); }
+});
+
+if(DEMO) render();
+else {
+ let authed=false;
+ setTimeout(()=>{ if(!authed) render(); },2500);
+ fb.onAuthStateChanged(auth,u=>{
+  authed=true;
+  S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null;
+  render();
+  if(u) subscribe(u.uid);
+});
+}
+</script>
+</body>
+</html>
