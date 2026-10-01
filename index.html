@@ -81,13 +81,15 @@ if (!DEMO) {
 
 const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
-const S = { tab:"home", user:null, profile:{}, wallets:[], orders:[], range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"" };
+const todayStr = () => new Date().toLocaleDateString("en-CA");
+const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
+const S = { tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"" };
 const RANGES = [[100,199],[200,1000],[1000,4000],[4000,10000],[10000,99999]];
 const RLAB = ["100 - 199","200 - 1K","1K - 4K","4K - 10K","10K+"];
 let unsubs = [];
 
 const demoData = () => {
-  S.profile = { phone:"+880 184****059", balance:13.63, code:"WcLvJ8", saleAmount:45222, saleOrders:39, purchaseAmount:0, purchaseOrders:0, income:1245.46 };
+  S.profile = { phone:"+880 184****059", balance:13.63, code:"WcLvJ8", statsDate:todayStr(), saleAmount:45222, saleOrders:39, purchaseAmount:0, purchaseOrders:0, income:1245.46 };
   S.wallets = [{id:"1",type:"bkash",number:"01828975671",balance:0,online:false},{id:"2",type:"nagad",number:"01828975671",balance:5628.82,online:true}];
   S.orders = [{id:"a",amount:111,type:"bkash",mask:"179***7kPO",rate:3,cancels:0},{id:"b",amount:104,type:"bkash",mask:"179***USsO",rate:3,cancels:0},{id:"c",amount:110,type:"nagad",mask:"179***q0HO",rate:3,cancels:0}];
 };
@@ -116,7 +118,7 @@ const head = title => `<header><h1>${title}</h1><span class="chip">v82</span><bu
 
 /* ---------- Screens ---------- */
 function home(){
-  const p = S.profile;
+  const p = todayProfile();
   return head("Home") + `
   <div class="hero" style="background:linear-gradient(120deg,#00a99d,#1565c0);color:#fff;padding:26px">
     <div style="font-size:26px;font-weight:800">NERIVO</div>
@@ -174,6 +176,15 @@ function mine(){
   <div class="list">${item("help","Common Questions","faq")}${item("award","New Rewards","rewards")}<button class="row" data-logout><span style="color:var(--g)">${IC.power}</span><span>Log out</span><span style="color:var(--mute)">${IC.right}</span></button></div>`;
 }
 
+function ledgerView(){
+  const isOrders = S.view === "orders";
+  const rows = S.ledger.filter(l => !isOrders || l.kind === "purchase");
+  const label = l => l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
+  return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">${isOrders ? "Order History" : "Balance Details"}</h1></header>
+  <div class="hero"><div class="sub">Current balance</div><div class="big">${fmt(S.profile.balance)} BDT</div><div class="sub">Today's earning: ${fmt(todayProfile().income)} BDT</div></div>
+  ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:16px;font-weight:600">${label(l)}</div><div class="sub">${l.when}</div></div><b style="color:var(--g);font-size:19px">+${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet. Claim an order to see it here.</div>`}`;
+}
+
 function authView(){
   const reg = S.authMode==="register";
   return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:6px">${reg?"Create your account":"Log in to continue"}</p>
@@ -193,17 +204,19 @@ function nav(){
 function render(){
   const app = $("#app");
   if(!S.user){ app.innerHTML = authView(); return; }
-  app.innerHTML = ({home,buy,sell,mine})[S.tab]() + nav();
+  app.innerHTML = (S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav();
 }
 
 /* ---------- Data (Firestore) ---------- */
 function subscribe(uid){
-  const {doc,collection,query,where,onSnapshot} = fb;
+  const {doc,collection,query,where,orderBy,limit,onSnapshot} = fb;
   unsubs.forEach(u=>u()); unsubs=[
     onSnapshot(doc(db,"users",uid), s=>{ S.profile = s.data()||{}; render(); }),
     onSnapshot(collection(db,"users",uid,"wallets"), s=>{ S.wallets = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
     onSnapshot(query(collection(db,"buyOrders"),where("status","==","open")), s=>{ S.orders = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
-    onSnapshot(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); })
+    onSnapshot(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); }),
+    onSnapshot(query(collection(db,"users",uid,"ledger"),orderBy("createdAt","desc"),limit(100)), s=>{
+      S.ledger = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,when:(x.createdAt?.toDate?.()||new Date()).toLocaleString()}; }); render(); })
   ];
 }
 
@@ -223,59 +236,4 @@ function addWalletSheet(){
   const m=document.createElement("div"); m.className="modal";
   m.innerHTML=`<div class="sheet"><h2>Add Wallet</h2><select id="wt"><option value="bkash">bKash</option><option value="nagad">Nagad</option></select><input id="wn" type="tel" placeholder="Wallet number (01XXXXXXXXX)"><div class="err" id="we"></div><button class="btn" style="margin-top:16px" id="ws">Save wallet</button><button class="btn out" style="margin-top:10px" id="wc">Cancel</button></div>`;
   document.body.append(m);
-  $("#wc").onclick=()=>m.remove();
-  $("#ws").onclick=async()=>{
-    const type=$("#wt").value, number=$("#wn").value.trim();
-    if(!/^01\d{9}$/.test(number)){ $("#we").textContent="Enter an 11-digit number starting with 01."; return; }
-    const w={type,number,balance:0,online:false};
-    if(DEMO) S.wallets.push({id:String(Date.now()),...w});
-    else await fb.addDoc(fb.collection(db,"users",S.user.uid,"wallets"),w);
-    m.remove(); render(); toast("Wallet added");
-  };
-}
-
-async function toggleWallet(id){
-  const w=S.wallets.find(x=>x.id===id); w.online=!w.online;
-  if(!DEMO) await fb.updateDoc(fb.doc(db,"users",S.user.uid,"wallets",id),{online:w.online});
-  render(); toast(w.online?"Collection started":"Wallet offline");
-}
-
-async function claim(id){
-  const o=S.orders.find(x=>x.id===id); if(!o) return;
-  if(DEMO){ S.orders=S.orders.filter(x=>x.id!==id); render(); toast("Order claimed"); return; }
-  try{
-    await fb.runTransaction(db, async t=>{
-      const ref=fb.doc(db,"buyOrders",id), s=await t.get(ref);
-      if(!s.exists() || s.data().status!=="open") throw new Error("taken");
-      t.update(ref,{status:"claimed",claimedBy:S.user.uid,claimedAt:fb.serverTimestamp()});
-    });
-    toast("Order claimed");
-  }catch(e){ toast(e.message==="taken"?"Someone else claimed this order":"Could not claim order"); }
-}
-
-/* ---------- Events ---------- */
-document.addEventListener("click", async e=>{
-  const t=e.target.closest("button,a"); if(!t) return;
-  const d=t.dataset;
-  if("tab" in d){ S.tab=d.tab; render(); scrollTo(0,0); }
-  else if("cur" in d){ S.cur=d.cur; render(); }
-  else if("range" in d){ S.range=+d.range; render(); }
-  else if("claim" in d) claim(d.claim);
-  else if("toggle" in d) toggleWallet(d.toggle);
-  else if("sync" in d) toast("Balance refreshed");
-  else if("add" in d) addWalletSheet();
-  else if("copy" in d){ try{ await navigator.clipboard.writeText(S.profile.code||""); toast("Code copied"); }catch{ toast(S.profile.code||""); } }
-  else if("go" in d) toast("Coming soon: "+d.go);
-  else if("mode" in d){ S.authMode=S.authMode==="login"?"register":"login"; S.err=""; render(); }
-  else if("auth" in d) doAuth();
-  else if("logout" in d){ if(DEMO){ S.user=null; render(); } else await fb.signOut(auth); }
-});
-
-if(DEMO) render();
-else fb.onAuthStateChanged(auth,u=>{
-  S.user=u; unsubs.forEach(x=>x()); unsubs=[];
-  if(u) subscribe(u.uid); else render();
-});
-</script>
-</body>
-</html>
+  $("#wc").on
