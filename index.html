@@ -60,6 +60,7 @@ a.lnk{color:var(--g);text-decoration:underline;cursor:pointer}
 function showErr(m){var d=document.getElementById('errbar')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'errbar'}));d.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;padding:12px 16px;font-size:13px;z-index:99;word-break:break-word';d.textContent='Error: '+m;}
 addEventListener('error',function(e){showErr(e.message)});
 addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.message)||e.reason)});
+setTimeout(function(){var a=document.getElementById('app')||document.getElementById('root');if(a&&a.textContent.trim()==='Loading...')showErr('Still loading after 8 seconds. Check internet connection and that Firestore Database is created.')},8000);
 </script>
 <script type="module">
 /* ============ 1) Paste your Firebase config here (Firebase Console > Project settings) ============ */
@@ -81,7 +82,7 @@ if (!DEMO) try {
   const [a, f, ap] = await Promise.all([import(V+"firebase-auth.js"), import(V+"firebase-firestore.js"), import(V+"firebase-app.js")]);
   fb = { ...a, ...f };
   const app = ap.initializeApp(firebaseConfig);
-  auth = a.getAuth(app); db = f.getFirestore(app);
+  auth = a.getAuth(app); db = f.initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
 } catch(e) { showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); throw e; }
 
 const $ = s => document.querySelector(s);
@@ -233,6 +234,4 @@ async function doAuth(){
   try{
     if(S.authMode==="register"){
       const c = await fb.createUserWithEmailAndPassword(auth,email,pw);
-      await fb.setDoc(fb.doc(db,"users",c.user.uid),{phone:$("#ph").value.trim(),email,balance:0,code:Math.random().toString(36).slice(2,8),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()});
-    } else await fb.signInWithEmailAndPassword(auth,email,pw);
-  }catch(e){ S.err = e.code==="auth/invalid-credential"?"Wrong email or password.":e.code==="a
+      await fb.setDoc(fb.doc(db,"users",c.user.uid),{phone:$("#ph").value.trim(),email,balance:0,c
