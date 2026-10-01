@@ -213,4 +213,195 @@ function authView(){
   const reg = S.authMode==="register";
   return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:6px">${reg?"Create your account":"Log in to continue"}</p>
   ${DEMO?`<p class="sub" style="margin-top:12px;color:var(--g)">Demo mode: Firebase is not set up yet. Tap the button to preview.</p>`:""}
-  <input id="em" type="email" placeholder="Email" autocomplete="email"><input 
+  <input id="em" type="email" placeholder="Email" autocomplete="email"><input id="pw" type="password" placeholder="Password (6+ characters)" autocomplete="${reg?"new-password":"current-password"}">
+  ${reg?`<input id="ph" type="tel" placeholder="Phone number"><input id="rc" placeholder="Referral code (optional)" value="${esc(REF)}">`:""}
+  <div class="err">${S.err}</div>
+  <button class="btn" style="margin-top:16px" data-auth>${reg?"Create account":"Log in"}</button>
+  <p class="sub" style="text-align:center;margin-top:18px">${reg?"Have an account?":"New here?"} <a class="lnk" data-mode>${reg?"Log in":"Create account"}</a></p></div>`;
+}
+
+function nav(){
+  const b=(k,l)=>`<button class="${S.tab===k?"act":""}" data-tab="${k}">${IC[k]}<span>${l}</span></button>`;
+  return `<nav>${b("home","Home")}${b("buy","Buy")}<button class="gift" data-tab="home" aria-label="Rewards">🎁</button>${b("sell","Sell")}${b("mine","Mine")}</nav>`;
+}
+
+function render(){
+  const app = $("#app");
+  if(!S.user){ app.innerHTML = authView(); return; }
+  app.innerHTML = (S.view === "team" ? teamView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav();
+}
+
+/* ---------- Data (Firestore) ---------- */
+function subscribe(uid){
+  const {doc,collection,query,where,orderBy,limit,onSnapshot} = fb;
+  const onS = (r,cb) => onSnapshot(r,cb,e=>showErr(e.code+": "+e.message));
+  unsubs.forEach(u=>u()); unsubs=[
+    onS(doc(db,"users",uid), s=>{
+      S.profile = s.data()||{}; render();
+      if(s.exists() && s.data().code && !S.codeChecked){ S.codeChecked = true; ensureCode(uid, s.data().code); }
+      if(!s.exists() && !s.metadata.fromCache && !S.creating){
+        S.creating = true;
+        fb.setDoc(doc(db,"users",uid),{phone:"",email:S.user?.email||"",balance:0,code:rnd6(),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()})
+          .catch(e=>showErr("Profile create failed: "+e.code)).finally(()=>{ S.creating=false; });
+      }
+    }),
+    onS(collection(db,"users",uid,"wallets"), s=>{ S.wallets = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
+    onS(query(collection(db,"buyOrders"),where("status","==","open")), s=>{ S.orders = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
+    onS(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); }),
+    onS(query(collection(db,"users",uid,"ledger"),orderBy("createdAt","desc"),limit(100)), s=>{
+      S.ledger = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,when:(x.createdAt?.toDate?.()||new Date()).toLocaleString()}; }); render(); }),
+    onS(query(collection(db,"users",uid,"team"),orderBy("joinedAt","desc"),limit(200)), s=>{
+      S.team = s.docs.map(d=>{ const x=d.data(); return {id:d.id,name:x.name,when:(x.joinedAt?.toDate?.()||new Date()).toLocaleDateString()}; }); render(); })
+  ];
+}
+
+async function ensureCode(uid, code){
+  try{
+    const r = await fb.getDoc(fb.doc(db,"referralCodes",code));
+    if(!r.exists()) await fb.setDoc(fb.doc(db,"referralCodes",code),{uid});
+  }catch(e){ console.warn("ensureCode", e.code); }
+}
+
+async function register(email, pw){
+  const phone = $("#ph").value.trim(), refCode = ($("#rc")?.value || "").trim();
+  const c = await fb.createUserWithEmailAndPassword(auth, email, pw);
+  const uid = c.user.uid;
+  let code = "";
+  for(let i=0;i<6 && !code;i++){
+    const x = rnd6();
+    try{ const r = await fb.getDoc(fb.doc(db,"referralCodes",x)); if(!r.exists()) code = x; }catch{ code = x; }
+  }
+  let refUid = null;
+  if(refCode){
+    try{ const r = await fb.getDoc(fb.doc(db,"referralCodes",refCode)); if(r.exists() && r.data().uid !== uid) refUid = r.data().uid; }catch(e){ console.warn("ref lookup", e.code); }
+  }
+  const prof = {phone,email,balance:0,code,saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()};
+  if(refUid) prof.referredBy = refUid;
+  const b = fb.writeBatch(db);
+  b.set(fb.doc(db,"users",uid), prof);
+  b.set(fb.doc(db,"referralCodes",code), {uid});
+  if(refUid) b.set(fb.doc(db,"users",refUid,"team",uid), {name:maskName(phone,email), joinedAt:fb.serverTimestamp()});
+  await b.commit();
+}
+
+async function doAuth(){
+  const email=$("#em").value.trim(), pw=$("#pw").value;
+  S.err="";
+  if(DEMO){ S.user={email:email||"demo@nerivo.app"}; demoData(); render(); return; }
+  try{
+    if(S.authMode==="register"){
+      await register(email, pw);
+    } else await fb.signInWithEmailAndPassword(auth,email,pw);
+  }catch(e){ S.err = e.code==="auth/invalid-credential"?"Wrong email or password.":e.code==="auth/email-already-in-use"?"This email is already registered. Log in instead.":e.code==="auth/weak-password"?"Password must be at least 6 characters.":e.message; render(); }
+}
+
+function addWalletSheet(){
+  const m=document.createElement("div"); m.className="modal";
+  m.innerHTML=`<div class="sheet"><h2>Add Wallet</h2><select id="wt"><option value="bkash">bKash</option><option value="nagad">Nagad</option></select><input id="wn" type="tel" placeholder="Wallet number (01XXXXXXXXX)"><div class="err" id="we"></div><button class="btn" style="margin-top:16px" id="ws">Save wallet</button><button class="btn out" style="margin-top:10px" id="wc">Cancel</button></div>`;
+  document.body.append(m);
+  $("#wc").onclick=()=>m.remove();
+  $("#ws").onclick=async()=>{
+    const type=$("#wt").value, number=$("#wn").value.trim();
+    if(!/^01\d{9}$/.test(number)){ $("#we").textContent="Enter an 11-digit number starting with 01."; return; }
+    const w={type,number,balance:0,online:false};
+    if(DEMO) S.wallets.push({id:String(Date.now()),...w});
+    else await fb.addDoc(fb.collection(db,"users",S.user.uid,"wallets"),w);
+    m.remove(); render(); toast("Wallet added");
+  };
+}
+
+async function toggleWallet(id){
+  const w=S.wallets.find(x=>x.id===id); w.online=!w.online;
+  if(!DEMO) await fb.updateDoc(fb.doc(db,"users",S.user.uid,"wallets",id),{online:w.online});
+  render(); toast(w.online?"Collection started":"Wallet offline");
+}
+
+function demoClaim(o){
+  const p=S.profile, fresh=p.statsDate!==todayStr(), r=o.amount*o.rate/100, when=new Date().toLocaleString();
+  p.balance=(p.balance||0)+o.amount; p.income=(fresh?0:(p.income||0))+r;
+  p.purchaseAmount=(fresh?0:(p.purchaseAmount||0))+o.amount; p.purchaseOrders=(fresh?0:(p.purchaseOrders||0))+1; p.statsDate=todayStr();
+  S.ledger.unshift({id:o.id+"_reward",kind:"reward",amount:r,when},{id:o.id+"_buy",kind:"purchase",amount:o.amount,when});
+}
+
+async function claim(id){
+  const o=S.orders.find(x=>x.id===id); if(!o||S.claiming) return;
+  S.claiming=true;
+  try{
+    if(DEMO){ demoClaim(o); S.orders=S.orders.filter(x=>x.id!==id); }
+    else {
+      await fb.runTransaction(db, async t=>{
+        const oRef=fb.doc(db,"buyOrders",id), uRef=fb.doc(db,"users",S.user.uid);
+        const [os,us]=await Promise.all([t.get(oRef),t.get(uRef)]);
+        if(!os.exists()||os.data().status!=="open") throw new Error("taken");
+        if(!us.exists()) throw new Error("noprofile");
+        const od=os.data(), u=us.data()||{}, day=todayStr(), fresh=u.statsDate!==day, reward=od.amount*od.rate/100;
+        t.update(oRef,{status:"claimed",claimedBy:S.user.uid,claimedAt:fb.serverTimestamp()});
+        t.update(uRef,{
+          balance:(u.balance||0)+od.amount,
+          income:(fresh?0:(u.income||0))+reward,
+          purchaseAmount:(fresh?0:(u.purchaseAmount||0))+od.amount,
+          purchaseOrders:(fresh?0:(u.purchaseOrders||0))+1,
+          statsDate:day, lastClaim:id });
+        const L=fb.collection(db,"users",S.user.uid,"ledger");
+        t.set(fb.doc(L,id+"_buy"),{kind:"purchase",amount:od.amount,orderId:id,createdAt:fb.serverTimestamp()});
+        t.set(fb.doc(L,id+"_reward"),{kind:"reward",amount:reward,orderId:id,createdAt:fb.serverTimestamp()});
+      });
+    }
+    toast("Order claimed. Balance updated");
+  }catch(e){
+    console.error(e);
+    if(e.message==="taken") toast("Someone else claimed this order");
+    else if(e.message==="noprofile") toast("Profile is being created, try again in a moment");
+    else { toast("Could not claim order ("+(e.code||"error")+")"); showErr("Claim failed: "+(e.code||"")+" "+e.message); }
+  }
+  S.claiming=false; render();
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("click", async e=>{
+  const t=e.target.closest("button,a"); if(!t) return;
+  const d=t.dataset;
+  if("tab" in d){ S.tab=d.tab; S.view=null; render(); scrollTo(0,0); }
+  else if("back" in d){ S.view=null; render(); }
+  else if("cur" in d){ S.cur=d.cur; render(); }
+  else if("range" in d){ S.range=+d.range; render(); }
+  else if("claim" in d) claim(d.claim);
+  else if("toggle" in d) toggleWallet(d.toggle);
+  else if("sync" in d) toast("Balance refreshed");
+  else if("add" in d) addWalletSheet();
+  else if("copylink" in d){ try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } }
+  else if("sharelink" in d){ if(navigator.share){ try{ await navigator.share({title:"Join me on Nerivo", url:refLink()}); }catch{} } else { try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } } }
+  else if("copy" in d){ try{ await navigator.clipboard.writeText(S.profile.code||""); toast("Code copied"); }catch{ toast(S.profile.code||""); } }
+  else if("go" in d){ if(["balance","orders","team"].includes(d.go)){ S.view=d.go; render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
+  else if("mode" in d){ S.authMode=S.authMode==="login"?"register":"login"; S.err=""; render(); }
+  else if("auth" in d) doAuth();
+  else if("logout" in d){ if(DEMO){ S.user=null; render(); } else await fb.signOut(auth); }
+});
+
+render();
+if(!DEMO){
+  setInterval(()=>{ if(!READY && !S.user) render(); },1000);
+  setTimeout(()=>{ if(!READY) showErr("Still connecting after 30 seconds. Your network may be slow or blocking Google servers. Try another network or a VPN."); },30000);
+  (async()=>{
+    try{
+      const V = "https://www.gstatic.com/firebasejs/10.12.2/";
+      const done = [];
+      const ld = (n,u) => import(V+u).then(m => { done.push(n); setStatus("Downloaded: "+done.join(", ")+" (of 3)"); return m; });
+      setStatus("Downloading Firebase files...");
+      const [a, f, ap] = await Promise.all([ld("auth","firebase-auth.js"), ld("database","firebase-firestore.js"), ld("app","firebase-app.js")]);
+      fb = { ...a, ...f };
+      const app = ap.initializeApp(firebaseConfig);
+      auth = a.initializeAuth(app, { persistence: [a.indexedDBLocalPersistence, a.browserLocalPersistence, a.inMemoryPersistence] });
+      db = f.initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+      READY = true;
+    }catch(e){ showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); return; }
+    fb.onAuthStateChanged(auth,u=>{
+      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.team=[];
+      render();
+      if(u) subscribe(u.uid);
+    });
+  })();
+}
+</script>
+</body>
+</html>
