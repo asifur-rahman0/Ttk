@@ -76,14 +76,8 @@ const firebaseConfig = {
 /* ================================================================================================= */
 
 const DEMO = firebaseConfig.apiKey === "YOUR_API_KEY";   // demo mode = no Firebase, sample data only
-let fb = {}, auth, db;
-if (!DEMO) try {
-  const V = "https://www.gstatic.com/firebasejs/10.12.2/";
-  const [a, f, ap] = await Promise.all([import(V+"firebase-auth.js"), import(V+"firebase-firestore.js"), import(V+"firebase-app.js")]);
-  fb = { ...a, ...f };
-  const app = ap.initializeApp(firebaseConfig);
-  auth = a.initializeAuth(app, { persistence: [a.indexedDBLocalPersistence, a.browserLocalPersistence, a.inMemoryPersistence] }); db = f.initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
-} catch(e) { showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); throw e; }
+let fb = {}, auth, db, READY = DEMO;
+
 
 const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
@@ -127,7 +121,7 @@ const IC = {
 };
 const logo = t => `<div class="logo ${t==="bkash"?"bk":"ng"}">${t==="bkash"?"bK":"ন"}</div>`;
 
-const head = title => `<header><h1>${title}</h1><span class="chip">v83</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
+const head = title => `<header><h1>${title}</h1><span class="chip">v84</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
 
 /* ---------- Screens ---------- */
 function home(){
@@ -209,10 +203,17 @@ function teamView(){
 }
 
 function authView(){
+  if(!DEMO && !READY) return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:14px;font-size:16px">Connecting to server... A slow network can take up to a minute.</p></div>`;
   const reg = S.authMode==="register";
   return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:6px">${reg?"Create your account":"Log in to continue"}</p>
   ${DEMO?`<p class="sub" style="margin-top:12px;color:var(--g)">Demo mode: Firebase is not set up yet. Tap the button to preview.</p>`:""}
   <input id="em" type="email" placeholder="Email" autocomplete="email"><input id="pw" type="password" placeholder="Password (6+ characters)" autocomplete="${reg?"new-password":"current-password"}">
   ${reg?`<input id="ph" type="tel" placeholder="Phone number"><input id="rc" placeholder="Referral code (optional)" value="${esc(REF)}">`:""}
   <div class="err">${S.err}</div>
-  <button class="btn" style="margin-top:16px" data-auth>${re
+  <button class="btn" style="margin-top:16px" data-auth>${reg?"Create account":"Log in"}</button>
+  <p class="sub" style="text-align:center;margin-top:18px">${reg?"Have an account?":"New here?"} <a class="lnk" data-mode>${reg?"Log in":"Create account"}</a></p></div>`;
+}
+
+function nav(){
+  const b=(k,l)=>`<button class="${S.tab===k?"act":""}" data-tab="${k}">${IC[k]}<span>${l}</span></button>`;
+  return `<nav>${b("home","Home")}${b("buy","
