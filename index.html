@@ -89,13 +89,20 @@ const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
 const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"" };
+const S = { tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"" };
+const REF = new URLSearchParams(location.search).get("ref") || "";
+if (REF) S.authMode = "register";
+const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rnd6 = () => (Math.random().toString(36) + "000000").slice(2, 8);
+const refLink = () => location.origin + location.pathname + "?ref=" + (S.profile.code || "");
+const maskName = (ph, em) => (ph && ph.length >= 8) ? ph.slice(0,4) + "****" + ph.slice(-3) : ((em || "user").split("@")[0].slice(0,2) + "***");
 const RANGES = [[100,199],[200,1000],[1000,4000],[4000,10000],[10000,99999]];
 const RLAB = ["100 - 199","200 - 1K","1K - 4K","4K - 10K","10K+"];
 let unsubs = [];
 
 const demoData = () => {
   S.profile = { phone:"+880 184****059", balance:13.63, code:"WcLvJ8", statsDate:todayStr(), saleAmount:45222, saleOrders:39, purchaseAmount:0, purchaseOrders:0, income:1245.46 };
+  S.team = [{id:"t1",name:"+880 171****234",when:"10/1/2026"},{id:"t2",name:"+880 190****877",when:"9/29/2026"}];
   S.wallets = [{id:"1",type:"bkash",number:"01828975671",balance:0,online:false},{id:"2",type:"nagad",number:"01828975671",balance:5628.82,online:true}];
   S.orders = [{id:"a",amount:111,type:"bkash",mask:"179***7kPO",rate:3,cancels:0},{id:"b",amount:104,type:"bkash",mask:"179***USsO",rate:3,cancels:0},{id:"c",amount:110,type:"nagad",mask:"179***q0HO",rate:3,cancels:0}];
 };
@@ -120,7 +127,7 @@ const IC = {
 };
 const logo = t => `<div class="logo ${t==="bkash"?"bk":"ng"}">${t==="bkash"?"bK":"ন"}</div>`;
 
-const head = title => `<header><h1>${title}</h1><span class="chip">v82</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
+const head = title => `<header><h1>${title}</h1><span class="chip">v83</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
 
 /* ---------- Screens ---------- */
 function home(){
@@ -191,42 +198,21 @@ function ledgerView(){
   ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:16px;font-weight:600">${label(l)}</div><div class="sub">${l.when}</div></div><b style="color:var(--g);font-size:19px">+${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet. Claim an order to see it here.</div>`}`;
 }
 
+function teamView(){
+  const link = refLink();
+  return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">My Team</h1></header>
+  <div class="hero"><div class="sub">Your referral code</div><div class="big">${esc(S.profile.code||"...")}</div>
+    <div class="sub" style="word-break:break-all;margin-top:8px">${esc(link)}</div>
+    <div class="flex" style="margin-top:14px"><button class="btn sm" data-copylink>Copy link</button><button class="btn sm out" data-sharelink>Share</button></div></div>
+  <div class="card flex"><div class="sp sub">Team members</div><b style="font-size:26px">${S.team.length}</b></div>
+  ${S.team.length ? S.team.map(m=>`<div class="card flex"><div class="logo" style="background:var(--teal);border-radius:50%">${esc((m.name||"?")[0])}</div><div class="sp"><div style="font-size:17px;font-weight:600">${esc(m.name)}</div><div class="sub">Joined ${esc(m.when)}</div></div></div>`).join("") : `<div class="empty">No members yet. Share your link to invite people.</div>`}`;
+}
+
 function authView(){
   const reg = S.authMode==="register";
   return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:6px">${reg?"Create your account":"Log in to continue"}</p>
   ${DEMO?`<p class="sub" style="margin-top:12px;color:var(--g)">Demo mode: Firebase is not set up yet. Tap the button to preview.</p>`:""}
   <input id="em" type="email" placeholder="Email" autocomplete="email"><input id="pw" type="password" placeholder="Password (6+ characters)" autocomplete="${reg?"new-password":"current-password"}">
-  ${reg?`<input id="ph" type="tel" placeholder="Phone number">`:""}
+  ${reg?`<input id="ph" type="tel" placeholder="Phone number"><input id="rc" placeholder="Referral code (optional)" value="${esc(REF)}">`:""}
   <div class="err">${S.err}</div>
-  <button class="btn" style="margin-top:16px" data-auth>${reg?"Create account":"Log in"}</button>
-  <p class="sub" style="text-align:center;margin-top:18px">${reg?"Have an account?":"New here?"} <a class="lnk" data-mode>${reg?"Log in":"Create account"}</a></p></div>`;
-}
-
-function nav(){
-  const b=(k,l)=>`<button class="${S.tab===k?"act":""}" data-tab="${k}">${IC[k]}<span>${l}</span></button>`;
-  return `<nav>${b("home","Home")}${b("buy","Buy")}<button class="gift" data-tab="home" aria-label="Rewards">🎁</button>${b("sell","Sell")}${b("mine","Mine")}</nav>`;
-}
-
-function render(){
-  const app = $("#app");
-  if(!S.user){ app.innerHTML = authView(); return; }
-  app.innerHTML = (S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav();
-}
-
-/* ---------- Data (Firestore) ---------- */
-function subscribe(uid){
-  const {doc,collection,query,where,orderBy,limit,onSnapshot} = fb;
-  const onS = (r,cb) => onSnapshot(r,cb,e=>showErr(e.code+": "+e.message));
-  unsubs.forEach(u=>u()); unsubs=[
-    onS(doc(db,"users",uid), s=>{
-      S.profile = s.data()||{}; render();
-      if(!s.exists() && !s.metadata.fromCache && !S.creating){
-        S.creating = true;
-        fb.setDoc(doc(db,"users",uid),{phone:"",email:S.user?.email||"",balance:0,code:Math.random().toString(36).slice(2,8),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()})
-          .catch(e=>showErr("Profile create failed: "+e.code)).finally(()=>{ S.creating=false; });
-      }
-    }),
-    onS(collection(db,"users",uid,"wallets"), s=>{ S.wallets = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
-    onS(query(collection(db,"buyOrders"),where("status","==","open")), s=>{ S.orders = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
-    onS(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); }),
-    onS(qu
+  <button class="btn" style="margin-top:16px" data-auth>${re
