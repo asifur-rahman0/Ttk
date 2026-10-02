@@ -54,6 +54,10 @@ nav .gift{background:#fff;width:76px;height:76px;border-radius:50%;margin:-40px 
 .sheet{background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom,0px) + 22px)}
 .auth{padding-top:15vh}.auth h1{font-size:38px;color:var(--gd)}.err{color:#c0392b;font-size:14px;margin-top:10px}
 a.lnk{color:var(--g);text-decoration:underline;cursor:pointer}
+.htabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:14px 0 4px}
+.htabs button{border:1.5px solid var(--line);border-radius:14px;padding:10px 2px;font-size:13px;color:var(--mute);line-height:1.3;text-align:center}
+.htabs button b{display:block;font-size:18px;color:var(--ink)}
+.htabs button.act{background:var(--g);color:#fff;border-color:var(--g)}.htabs button.act b{color:#fff}
 :focus-visible{outline:3px solid var(--teal);outline-offset:2px}
 </style>
 </head>
@@ -88,13 +92,22 @@ const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
 const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"" };
+const S = { hTab:"created", tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
+S.authForm.ref = REF;
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const rnd6 = () => (Math.random().toString(36) + "000000").slice(2, 8);
 const refLink = () => location.origin + location.pathname + "?ref=" + (S.profile.code || "");
 const maskName = (ph, em) => (ph && ph.length >= 8) ? ph.slice(0,4) + "****" + ph.slice(-3) : ((em || "user").split("@")[0].slice(0,2) + "***");
+const phoneToEmail = ph => ph.replace(/\D/g,"") + "@nerivo.local";
+async function touchIp(uid){
+  try{
+    const r = await fetch("https://api.ipify.org?format=json");
+    const j = await r.json();
+    if(j.ip) await fb.updateDoc(fb.doc(db,"users",uid), { lastIp:j.ip, lastSeenAt:fb.serverTimestamp() });
+  }catch(e){ /* non-critical */ }
+}
 const RANGES = [[100,199],[200,1000],[1000,4000],[4000,10000],[10000,99999]];
 const RLAB = ["100 - 199","200 - 1K","1K - 4K","4K - 10K","10K+"];
 let unsubs = [];
@@ -129,12 +142,15 @@ const IC = {
 const logo = t => t==="both" ? `<div class="logo" style="background:var(--g)">৳</div>` : `<div class="logo ${t==="bkash"?"bk":"ng"}">${t==="bkash"?"bK":"ন"}</div>`;
 const typeLabel = t => t==="both" ? "bKash / Nagad" : t;
 const ms = ts => ts?.toMillis?.() || 0;
-const HOLD = 15*60*1000;
-const isMine = o => o.status==="reserved" && o.claimedBy===S.user?.uid;
-const expired = o => o.status==="reserved" && Date.now()-(o.claimedMs||0) > HOLD;
-const visibleOrder = o => o.status==="open" || isMine(o) || expired(o);
+/* Order status: open -> created (user claimed + picked wallet) -> success / failed / lock (admin decides). Old names are mapped. */
+const NS = s => ({reserved:"created",pending:"created",done:"success",claimed:"success",rejected:"failed"})[s] || s;
+const ST = {created:["Order Create","#b26a00"],success:["Success","var(--g)"],failed:["Failed","#c0392b"],lock:["Lock","#6b4fa0"]};
+const payLabel = m => m==="bkash" ? "bKash" : m==="nagad" ? "Nagad" : (m||"");
+const findOrder = id => S.myOrders.find(x=>x.id===id) || S.orders.find(x=>x.id===id);
+const isMine = o => NS(o.status)==="created" && o.claimedBy===S.user?.uid;
+const hist = (status,note) => fb.arrayUnion({status, by:"user", uid:S.user.uid, at:Date.now(), note});
 
-const head = title => `<header><h1>${title}</h1><span class="chip">v87</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
+const head = title => `<header><h1>${title}</h1><span class="chip">v88</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
 
 /* ---------- Screens ---------- */
 function home(){
@@ -158,14 +174,15 @@ function home(){
 
 function buy(){
   const [lo,hi] = RANGES[S.range];
-  const list = S.cur==="USDT" ? [] : S.orders.filter(o=>visibleOrder(o) && o.amount>=lo && o.amount<=hi);
+  const mine = S.myOrders.filter(isMine), mineIds = new Set(mine.map(o=>o.id));
+  const list = S.cur==="USDT" ? [] : [...mine, ...S.orders.filter(o=>o.status==="open" && !mineIds.has(o.id))].filter(o=>o.amount>=lo && o.amount<=hi);
   return head("Buy") + `
   <div class="hero"><div class="flex"><div class="sp"><h2>Buy Platform Balance</h2><div class="sub" style="font-size:16px">Choose amount and wallet.</div></div><button class="flex" style="color:var(--g)" data-go="purchases">${IC.wallet} Purchase records</button></div>
     <div class="seg" style="margin-top:14px"><button class="${S.cur==="BDT"?"act":""}" data-cur="BDT">BDT</button><button class="${S.cur==="USDT"?"act":""}" data-cur="USDT">USDT</button></div></div>
   <div class="ranges">${RLAB.map((l,i)=>`<button class="${i===S.range?"act":""}" data-range="${i}">${l}</button>`).join("")}</div>
   ${list.length ? list.map(o=>`<div class="card"><div class="flex">${logo(o.type)}<div class="sp"><div class="big" style="margin:0;font-size:28px">${fmt(o.amount)} BDT</div><div class="sub" style="font-size:17px">${typeLabel(o.type)}</div></div><span class="sub">${o.mask}</span></div>
     <div class="flex" style="margin-top:12px"><div class="stats"><div><b>+${fmt(o.amount*o.rate/100)} BDT</b>Reward</div><div><b>${fmt(o.rate)}%</b>Reward rate</div><div><b>${o.cancels}</b>Cancellations</div></div>
-    <button class="btn sm" style="padding:22px 18px;font-size:14px" data-claim="${o.id}">${isMine(o) ? "Continue payment" : "Claim purchase order"}</button></div></div>`).join("")
+    <button class="btn sm" style="padding:22px 18px;font-size:14px" data-claim="${o.id}">${isMine(o) ? "Continue payment" : "Claim purchase order"}</button>${isMine(o) && !o.trxId ? `<button class="btn sm out" style="padding:22px 18px;font-size:14px;margin-left:8px" data-cancel="${o.id}">Cancel</button>` : ""}</div></div>`).join("")
    : `<div class="empty">No orders in this range yet. Try another amount.</div>`}`;
 }
 
@@ -217,37 +234,60 @@ function teamView(){
 }
 
 function ordersView(){
-  const rows = [...S.myOrders].sort((a,b)=>(b.claimedMs||0)-(a.claimedMs||0));
-  const st = {reserved:["Awaiting your payment","#b26a00"],pending:["Waiting for verification","#b26a00"],done:["Approved","var(--g)"],claimed:["Approved","var(--g)"],rejected:["Rejected","#c0392b"]};
-  return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">Order History</h1></header>
-  ${rows.length ? rows.map(o=>{ const [t,c]=st[o.status]||[o.status,"var(--mute)"]; return `<div class="card"><div class="flex"><div class="sp"><div class="big" style="font-size:22px;margin:0">${fmt(o.amount)} BDT</div><div class="sub">${esc(o.payMethod||typeLabel(o.type))}${o.trxId?" · "+esc(o.trxId):""}</div></div><span class="tag" style="color:${c}">${t}</span></div></div>`; }).join("") : `<div class="empty">No orders yet. Claim an order from the Buy tab.</div>`}`;
+  const all = [...S.myOrders].sort((a,b)=>(b.claimedMs||0)-(a.claimedMs||0));
+  const cnt = k => all.filter(o=>NS(o.status)===k).length;
+  const rows = all.filter(o=>NS(o.status)===S.hTab);
+  const tabs = Object.keys(ST).map(k=>`<button class="${S.hTab===k?"act":""}" data-htab="${k}"><b>${cnt(k)}</b>${ST[k][0]}</button>`).join("");
+  const card = o => {
+    const st = NS(o.status), [t,c] = ST[st] || [o.status,"var(--mute)"];
+    const when = o.claimedMs ? new Date(o.claimedMs).toLocaleString() : "";
+    return `<div class="card"><div class="flex"><div class="sp"><div class="big" style="font-size:22px;margin:0">${fmt(o.amount)} BDT</div><div class="sub">${esc(payLabel(o.payMethod)||typeLabel(o.type))}${o.trxId?" · "+esc(o.trxId):""}</div><div class="sub" style="font-size:12px">${esc(when)}</div></div><span class="tag" style="color:${c};border:1px solid ${c}">${t}</span></div>
+    ${st==="created" ? `<div class="flex" style="margin-top:10px;gap:8px"><button class="btn sm" data-claim="${o.id}">${o.trxId?"View payment":"Continue payment"}</button>${o.trxId?"":`<button class="btn sm out" data-cancel="${o.id}">Cancel</button>`}</div>` : st==="lock" ? `<div class="sub" style="margin-top:10px">This order is locked by admin.</div>` : ""}</div>`;
+  };
+  return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">Purchase History</h1></header>
+  <div class="htabs">${tabs}</div>
+  ${rows.length ? rows.map(card).join("") : `<div class="empty">No "${ST[S.hTab][0]}" orders yet.</div>`}`;
 }
 
 function sheetView(){
-  const sh = S.sheet, o = S.orders.find(x=>x.id===sh.id) || {};
-  const m = sh.method, num = m==="bkash" ? o.bkashNumber : m==="nagad" ? o.nagadNumber : "", ml = m==="bkash" ? "bKash" : "Nagad";
-  const mb = (k,l) => { const n = k==="bkash" ? o.bkashNumber : o.nagadNumber; return `<button class="btn ${m===k?"":"out"}" style="flex:1" data-method="${k}" ${n?"":"disabled"}>${l}</button>`; };
-  return `<div class="modal"><div class="sheet">
-    <div class="flex"><h2 class="sp" style="font-size:20px">Pay ${fmt(o.amount)} BDT</h2><button data-closesheet style="font-size:28px;padding:0 8px" aria-label="Close">×</button></div>
-    <p class="sub" style="margin-top:6px">This order is reserved for you for 15 minutes. Choose the wallet you will pay with.</p>
-    <div class="flex" style="margin-top:14px">${mb("bkash","bKash")}${mb("nagad","Nagad")}</div>
-    ${m ? `<div class="tile" style="margin-top:14px"><div class="sub">Send exactly ${fmt(o.amount)} BDT to this ${ml} number</div>
+  const sh = S.sheet, o = findOrder(sh.id) || sh.snap || {};
+  const st = NS(o.status), made = !!sh.created, m = sh.method, ml = payLabel(m);
+  const num = m==="bkash" ? o.bkashNumber : m==="nagad" ? o.nagadNumber : "";
+  const closed = made && ["success","failed","lock"].includes(st);
+  const mb = (k,l) => { const n = k==="bkash" ? o.bkashNumber : o.nagadNumber; return `<button class="btn out" style="flex:1" data-method="${k}" ${n?"":"disabled"}>${l}</button>`; };
+  let body;
+  if(!m) body = `<p class="sub" style="margin-top:6px">Choose bKash or Nagad. The order is created instantly and locked for you, so no other user can claim it.</p>
+    <div class="flex" style="margin-top:14px">${mb("bkash","bKash")}${mb("nagad","Nagad")}</div>`;
+  else if(closed) body = `<p class="sub" style="margin-top:10px">This order is now: <b style="color:${ST[st][1]}">${ST[st][0]}</b>.</p>`;
+  else body = `<div class="tile" style="margin-top:12px;background:#f0faf5;color:var(--g)">✅ Order created with ${ml}. It is locked for you only.</div>
+    <div class="tile" style="margin-top:12px"><div class="sub">Send exactly ${fmt(o.amount)} BDT to this ${ml} number</div>
       <div class="flex"><b class="sp" style="font-size:24px;letter-spacing:1px">${esc(num)}</b><button class="btn sm out" data-copynum="${esc(num)}">Copy</button></div></div>
-      <input id="ps" type="tel" inputmode="numeric" placeholder="Your ${ml} number (sent from)" value="${esc(sh.sender)}">
-      <input id="pt" placeholder="Transaction ID" autocapitalize="characters" value="${esc(sh.trx)}">
-      <button class="btn" style="margin-top:14px" data-submitpay>Submit payment</button>
-      <p class="sub" style="margin-top:8px;font-size:13px">Your balance is added after the admin verifies your payment.</p>` : ""}
+    <input id="ps" type="tel" inputmode="numeric" placeholder="Your ${ml} number (sent from)" value="${esc(sh.sender)}">
+    <input id="pt" placeholder="Transaction ID" autocapitalize="characters" value="${esc(sh.trx)}">
+    <button class="btn" style="margin-top:14px" data-submitpay>Submit payment</button>
+    <p class="sub" style="margin-top:8px;font-size:13px">Admin will update your order status (Success / Failed / Lock) after checking.</p>
+    ${o.trxId ? "" : `<button class="btn sm out" style="margin-top:12px;width:100%" data-cancel="${sh.id}">Cancel and release this order</button>`}`;
+  return `<div class="modal"><div class="sheet">
+    <div class="flex"><h2 class="sp" style="font-size:20px">${made ? "Pay" : "Take order"} ${fmt(o.amount)} BDT</h2><button data-closesheet style="font-size:28px;padding:0 8px" aria-label="Close">×</button></div>
+    ${body}
   </div></div>`;
 }
 
 function authView(){
   if(!DEMO && !READY) return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:14px;font-size:16px">Connecting to server... ${Math.round((Date.now()-T0)/1000)}s</p><p class="sub" style="margin-top:8px">${esc(S.status||"Starting...")}</p><p class="sub" style="margin-top:8px">A slow network can take up to a minute. If it stays stuck, reload.</p><button class="btn" style="margin-top:20px" onclick="location.reload()">Reload</button></div>`;
-  const reg = S.authMode==="register";
+  const reg = S.authMode==="register", f = S.authForm;
+  const refLine = !reg ? "" : S.refChecking ? `<p class="sub" style="margin-top:8px">Checking referral code...</p>`
+    : S.refOk===true ? `<p style="margin-top:8px;color:var(--g);font-size:14px">✅ ${esc(S.refMsg||"This referral code is valid.")}</p>`
+    : S.refOk===false ? `<p class="err" style="margin-top:8px">❌ ${esc(S.refMsg||"This referral code is not valid.")}</p>`
+    : "";
   return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:6px">${reg?"Create your account":"Log in to continue"}</p>
   ${DEMO?`<p class="sub" style="margin-top:12px;color:var(--g)">Demo mode: Firebase is not set up yet. Tap the button to preview.</p>`:""}
-  <input id="em" type="email" placeholder="Email" autocomplete="email"><input id="pw" type="password" placeholder="Password (6+ characters)" autocomplete="${reg?"new-password":"current-password"}">
-  ${reg?`<input id="ph" type="tel" placeholder="Phone number"><input id="rc" placeholder="Referral code (optional)" value="${esc(REF)}">`:""}
-  <div class="err">${S.err}</div>
+  <input id="aphone" type="tel" inputmode="numeric" placeholder="Phone number (01XXXXXXXXX)" value="${esc(f.phone)}" autocomplete="tel">
+  <input id="apw" type="password" placeholder="Password (6+ characters)" value="${esc(f.pw)}" autocomplete="${reg?"new-password":"current-password"}">
+  ${reg?`<input id="apw2" type="password" placeholder="Confirm password" value="${esc(f.pw2)}" autocomplete="new-password">
+  <div class="flex" style="margin-top:10px;gap:8px"><input id="arc" placeholder="Referral code" style="margin-top:0;flex:1" value="${esc(f.ref)}"><button class="btn sm" style="margin-top:0" data-verifyref>Verify</button></div>
+  ${refLine}`:""}
+  <div class="err">${esc(S.err)}</div>
   <button class="btn" style="margin-top:16px" data-auth>${reg?"Create account":"Log in"}</button>
   <p class="sub" style="text-align:center;margin-top:18px">${reg?"Have an account?":"New here?"} <a class="lnk" data-mode>${reg?"Log in":"Create account"}</a></p></div>`;
 }
@@ -306,8 +346,7 @@ function autoProfile(uid){
     .catch(e=>showErr("Profile create failed: "+e.code)).finally(()=>{ S.creating=false; });
 }
 
-async function register(email, pw){
-  const phone = $("#ph").value.trim(), refCode = ($("#rc")?.value || "").trim();
+async function register(email, pw, phone, refCode){
   S.registering = true;
   let uid = null;
   try{
@@ -319,14 +358,12 @@ async function register(email, pw){
       try{ const r = await fb.getDoc(fb.doc(db,"referralCodes",x)); if(!r.exists()) code = x; }catch{ code = x; }
     }
     let refUid = null, note = "";
-    if(refCode){
-      try{
-        const r = await fb.getDoc(fb.doc(db,"referralCodes",refCode));
-        if(!r.exists()) note = "Referral code not found. The referrer must log in once with the latest app, or ask admin to link you.";
-        else if(r.data().uid === uid) note = "You cannot use your own code.";
-        else refUid = r.data().uid;
-      }catch(e){ note = "Referral lookup failed ("+(e.code||e.message)+"). Publish the latest Firestore rules."; }
-    }
+    try{
+      const r = await fb.getDoc(fb.doc(db,"referralCodes",refCode));
+      if(!r.exists()) note = "Referral code not found. The referrer must log in once with the latest app, or ask admin to link you.";
+      else if(r.data().uid === uid) note = "You cannot use your own code.";
+      else refUid = r.data().uid;
+    }catch(e){ note = "Referral lookup failed ("+(e.code||e.message)+"). Publish the latest Firestore rules."; }
     const prof = {phone,email,balance:0,code,saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()};
     if(refUid) prof.referredBy = refUid;
     const b = fb.writeBatch(db);
@@ -335,6 +372,7 @@ async function register(email, pw){
     if(refUid) b.set(fb.doc(db,"users",refUid,"team",uid), {name:maskName(phone,email), joinedAt:fb.serverTimestamp()});
     await b.commit();
     if(note) showErr(note);
+    touchIp(uid);
   }catch(e){
     S.registering = false;
     if(uid){ showErr("Account created but profile data failed: "+(e.code||e.message)+". Publish the latest Firestore rules."); autoProfile(uid); }
@@ -342,15 +380,36 @@ async function register(email, pw){
   }finally{ S.registering = false; }
 }
 
-async function doAuth(){
-  const email=$("#em").value.trim(), pw=$("#pw").value;
-  S.err="";
-  if(DEMO){ S.user={uid:"demo",email:email||"demo@nerivo.app"}; demoData(); render(); return; }
+async function verifyRef(){
+  const code = S.authForm.ref.trim();
+  if(!code){ S.refOk = false; S.refMsg = "Please enter a referral code."; render(); return; }
+  S.refChecking = true; render();
+  if(DEMO){ S.refChecking = false; S.refOk = true; S.refMsg = "This referral code is valid."; render(); return; }
   try{
-    if(S.authMode==="register"){
-      await register(email, pw);
-    } else await fb.signInWithEmailAndPassword(auth,email,pw);
-  }catch(e){ S.err = e.code==="auth/invalid-credential"?"Wrong email or password.":e.code==="auth/email-already-in-use"?"This email is already registered. Log in instead.":e.code==="auth/weak-password"?"Password must be at least 6 characters.":e.message; render(); }
+    const r = await fb.getDoc(fb.doc(db,"referralCodes",code));
+    if(r.exists()){ S.refOk = true; S.refMsg = "This referral code is valid."; }
+    else { S.refOk = false; S.refMsg = "This referral code is not valid."; }
+  }catch(e){ S.refOk = false; S.refMsg = "Could not check the code right now. Try again."; }
+  S.refChecking = false; render();
+}
+
+async function doAuth(){
+  const phone = S.authForm.phone.trim(), pw = S.authForm.pw, reg = S.authMode==="register";
+  S.err = "";
+  if(DEMO){ S.user={uid:"demo",email:phoneToEmail(phone||"01700000000")}; demoData(); render(); return; }
+  if(!/^01\d{9}$/.test(phone)){ S.err = "Enter a valid 11-digit phone number (01XXXXXXXXX)."; render(); return; }
+  if(pw.length < 6){ S.err = "Password must be at least 6 characters."; render(); return; }
+  if(reg){
+    const pw2 = S.authForm.pw2, refCode = S.authForm.ref.trim();
+    if(pw !== pw2){ S.err = "Passwords do not match."; render(); return; }
+    if(!refCode){ S.err = "Referral code is required. Please enter one and press Verify."; render(); return; }
+    if(S.refOk !== true){ await verifyRef(); if(S.refOk !== true){ S.err = "Please verify a valid referral code before continuing."; render(); return; } }
+  }
+  const email = phoneToEmail(phone);
+  try{
+    if(reg) await register(email, pw, phone, S.authForm.ref.trim());
+    else { const c = await fb.signInWithEmailAndPassword(auth,email,pw); touchIp(c.user.uid); }
+  }catch(e){ S.err = e.code==="auth/invalid-credential"?"Wrong phone number or password.":e.code==="auth/email-already-in-use"?"This phone number is already registered. Log in instead.":e.code==="auth/weak-password"?"Password must be at least 6 characters.":e.message; render(); }
 }
 
 function addWalletSheet(){
@@ -374,24 +433,44 @@ async function toggleWallet(id){
   render(); toast(w.online?"Collection started":"Wallet offline");
 }
 
-async function startClaim(id){
-  const o = S.orders.find(x=>x.id===id); if(!o || S.claiming) return;
-  if(isMine(o)){ S.sheet = {id, method:null, sender:"", trx:""}; render(true); return; }
-  S.claiming = true;
+/* Step 1: tap "Claim" -> sheet opens (nothing is written yet). Step 2: pick bKash/Nagad -> order is created + locked instantly. */
+function startClaim(id){
+  const o = findOrder(id); if(!o) return;
+  if(isMine(o)) S.sheet = {id, snap:{...o}, created:true, method:o.payMethod||null, sender:o.senderNumber||"", trx:o.trxId||""};
+  else if(o.status==="open") S.sheet = {id, snap:{...o}, created:false, method:null, sender:"", trx:""};
+  else return toast("This order is no longer available");
+  render(true);
+}
+
+async function pickMethod(m){
+  const sh = S.sheet; if(!sh || S.claiming) return;
+  const o = findOrder(sh.id) || sh.snap; if(!o) return;
+  const uid = S.user.uid;
+  if(sh.created){            /* older claimed order that had no wallet yet: just save the wallet */
+    sh.method = m; render(true);
+    if(!DEMO) fb.updateDoc(fb.doc(db,"buyOrders",sh.id),{payMethod:m}).catch(e=>showErr("Save wallet failed: "+(e.code||e.message)));
+    return;
+  }
+  /* instant: show payment details right now, lock the order on the server in the background */
+  S.myOrders = [{...o,status:"created",claimedBy:uid,payMethod:m,claimedMs:Date.now()}, ...S.myOrders.filter(x=>x.id!==sh.id)];
+  sh.method = m; sh.created = true; S.claiming = true; render(true);
   try{
-    if(DEMO){ o.status="reserved"; o.claimedBy=S.user.uid; o.claimedMs=Date.now(); }
-    else await fb.updateDoc(fb.doc(db,"buyOrders",id),{status:"reserved",claimedBy:S.user.uid,claimedAt:fb.serverTimestamp()});
-    S.sheet = {id, method:null, sender:"", trx:""};
+    if(!DEMO) await fb.runTransaction(db, async t=>{
+      const ref = fb.doc(db,"buyOrders",sh.id), snap = await t.get(ref);
+      if(!snap.exists() || snap.data().status !== "open") throw new Error("taken");
+      t.update(ref,{status:"created",claimedBy:uid,claimedAt:fb.serverTimestamp(),payMethod:m,history:hist("created","Claimed with "+payLabel(m))});
+    });
   }catch(e){
     console.error(e);
-    toast("Could not reserve this order. Someone else may have taken it");
-    showErr("Reserve failed: "+(e.code||"")+" "+e.message);
+    S.myOrders = S.myOrders.filter(x=>x.id!==sh.id); S.sheet = null;
+    if(e.message==="taken") toast("Sorry, another user just took this order");
+    else { toast("Could not create the order ("+(e.code||"error")+")"); showErr("Create order failed: "+(e.code||"")+" "+e.message); }
   }
   S.claiming = false; render(true);
 }
 
 async function submitPay(){
-  const sh = S.sheet, o = S.orders.find(x=>x.id===sh.id) || {};
+  const sh = S.sheet;
   const sender = ($("#ps")?.value||"").trim(), trx = ($("#pt")?.value||"").trim().toUpperCase();
   sh.sender = sender; sh.trx = trx;
   if(!/^01\d{9}$/.test(sender)) return toast("Enter your 11-digit number (01XXXXXXXXX)");
@@ -399,9 +478,9 @@ async function submitPay(){
   if(S.claiming) return;
   S.claiming = true;
   try{
-    if(DEMO){ S.myOrders.unshift({...o,status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx,claimedMs:Date.now()}); S.orders = S.orders.filter(x=>x.id!==sh.id); }
-    else await fb.updateDoc(fb.doc(db,"buyOrders",sh.id),{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx,submittedAt:fb.serverTimestamp()});
-    S.sheet = null; S.view = "orders"; toast("Submitted. Waiting for admin verification");
+    if(DEMO){ const x = S.myOrders.find(y=>y.id===sh.id); if(x) Object.assign(x,{payMethod:sh.method,senderNumber:sender,trxId:trx}); }
+    else await fb.updateDoc(fb.doc(db,"buyOrders",sh.id),{payMethod:sh.method,senderNumber:sender,trxId:trx,submittedAt:fb.serverTimestamp(),history:hist("created","Payment proof submitted ("+trx+")")});
+    S.sheet = null; S.view = "orders"; S.hTab = "created"; toast("Submitted. Admin will update your order status");
   }catch(e){
     console.error(e);
     toast("Could not submit payment ("+(e.code||"error")+")");
@@ -410,8 +489,29 @@ async function submitPay(){
   S.claiming = false; render(true);
 }
 
+async function cancelClaim(id){
+  if(S.claiming) return;
+  S.claiming = true;
+  try{
+    if(DEMO) S.myOrders = S.myOrders.filter(x=>x.id!==id);
+    else await fb.updateDoc(fb.doc(db,"buyOrders",id), {status:"open", claimedBy:null, claimedAt:null, payMethod:null, senderNumber:null, trxId:null, history:hist("open","Released by user")});
+    S.sheet = null; toast("Order released back to the pool");
+  }catch(e){
+    console.error(e);
+    toast("Could not cancel this order");
+    showErr("Cancel failed: "+(e.code||"")+" "+e.message);
+  }
+  S.claiming = false; render(true);
+}
+
 /* ---------- Events ---------- */
-document.addEventListener("input", e=>{ if(!S.sheet) return; if(e.target.id==="ps") S.sheet.sender=e.target.value; if(e.target.id==="pt") S.sheet.trx=e.target.value; });
+document.addEventListener("input", e=>{
+  if(S.sheet){ if(e.target.id==="ps") S.sheet.sender=e.target.value; if(e.target.id==="pt") S.sheet.trx=e.target.value; }
+  if(e.target.id==="aphone") S.authForm.phone=e.target.value;
+  else if(e.target.id==="apw") S.authForm.pw=e.target.value;
+  else if(e.target.id==="apw2") S.authForm.pw2=e.target.value;
+  else if(e.target.id==="arc"){ S.authForm.ref=e.target.value; S.refOk=undefined; S.refMsg=""; }
+});
 document.addEventListener("click", async e=>{
   const t=e.target.closest("button,a"); if(!t) return;
   const d=t.dataset;
@@ -419,8 +519,11 @@ document.addEventListener("click", async e=>{
   else if("back" in d){ S.view=null; render(); }
   else if("cur" in d){ S.cur=d.cur; render(); }
   else if("range" in d){ S.range=+d.range; render(); }
+  else if("htab" in d){ S.hTab=d.htab; render(); }
   else if("claim" in d) startClaim(d.claim);
-  else if("method" in d){ S.sheet.method=d.method; render(true); }
+  else if("cancel" in d){ if(confirm("Release this order back to the pool? Do this only if you have not sent any money.")) cancelClaim(d.cancel); }
+  else if("verifyref" in d) verifyRef();
+  else if("method" in d) pickMethod(d.method);
   else if("closesheet" in d){ S.sheet=null; render(true); }
   else if("submitpay" in d) submitPay();
   else if("copynum" in d){ try{ await navigator.clipboard.writeText(d.copynum); toast("Number copied"); }catch{ toast(d.copynum); } }
@@ -430,10 +533,10 @@ document.addEventListener("click", async e=>{
   else if("copylink" in d){ try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } }
   else if("sharelink" in d){ if(navigator.share){ try{ await navigator.share({title:"Join me on Nerivo", url:refLink()}); }catch{} } else { try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } } }
   else if("copy" in d){ try{ await navigator.clipboard.writeText(S.profile.code||""); toast("Code copied"); }catch{ toast(S.profile.code||""); } }
-  else if("go" in d){ if(["balance","orders","team"].includes(d.go)){ S.view=d.go; render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
-  else if("mode" in d){ S.authMode=S.authMode==="login"?"register":"login"; S.err=""; render(); }
+  else if("go" in d){ const v = d.go==="purchases" ? "orders" : d.go; if(["balance","orders","team"].includes(v)){ S.view=v; if(v==="orders") S.hTab="created"; render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
+  else if("mode" in d){ S.authMode=S.authMode==="login"?"register":"login"; S.err=""; S.refOk=undefined; S.refMsg=""; render(); }
   else if("auth" in d) doAuth();
-  else if("logout" in d){ if(DEMO){ S.user=null; render(); } else await fb.signOut(auth); }
+  else if("logout" in d){ S.authForm={phone:"",pw:"",pw2:"",ref:""}; S.refOk=undefined; S.refMsg=""; if(DEMO){ S.user=null; render(); } else await fb.signOut(auth); }
 });
 
 render();
