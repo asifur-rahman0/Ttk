@@ -58,6 +58,7 @@ a.lnk{color:var(--g);text-decoration:underline;cursor:pointer}
 .htabs button{border:1.5px solid var(--line);border-radius:14px;padding:10px 2px;font-size:13px;color:var(--mute);line-height:1.3;text-align:center}
 .htabs button b{display:block;font-size:18px;color:var(--ink)}
 .htabs button.act{background:var(--g);color:#fff;border-color:var(--g)}.htabs button.act b{color:#fff}
+.notice{margin-top:calc(env(safe-area-inset-top,0px) + 12px);background:#fff3d6;color:#8a5a00;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5}
 :focus-visible{outline:3px solid var(--teal);outline-offset:2px}
 </style>
 </head>
@@ -66,7 +67,7 @@ a.lnk{color:var(--g);text-decoration:underline;cursor:pointer}
 
 <script>
 var __errs=[];
-function showErr(m){__errs.push(String(m));if(__errs.length>3)__errs.shift();var d=document.getElementById('errbar')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'errbar'}));d.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;padding:12px 16px;font-size:13px;z-index:99;word-break:break-word';d.textContent='Error: '+__errs.join(' | ');}
+function showErr(m){__errs.push(String(m));if(__errs.length>3)__errs.shift();var d=document.getElementById('errbar')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'errbar'}));d.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;padding:12px 16px;font-size:13px;z-index:99;word-break:break-word;cursor:pointer';d.textContent='Error: '+__errs.join(' | ')+'  (tap to close)';d.onclick=function(){__errs=[];d.remove()};clearTimeout(window.__et);window.__et=setTimeout(function(){__errs=[];d.remove()},15000);}
 addEventListener('error',function(e){showErr(e.message)});
 addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.message)||e.reason)});
 setTimeout(function(){var a=document.getElementById('app');if(a&&a.textContent.trim()==='Loading...')showErr('The app script has not started after 8 seconds. The page is probably still downloading on a slow network. Wait a little or reload.')},8000);
@@ -149,6 +150,22 @@ const payLabel = m => m==="bkash" ? "bKash" : m==="nagad" ? "Nagad" : (m||"");
 const findOrder = id => S.myOrders.find(x=>x.id===id) || S.orders.find(x=>x.id===id);
 const isMine = o => NS(o.status)==="created" && o.claimedBy===S.user?.uid;
 const hist = (status,note) => fb.arrayUnion({status, by:"user", uid:S.user.uid, at:Date.now(), note});
+/* Account status set by admin: active / banned / suspended (cannot use app) / frozen / locked (view only, no new orders) */
+const phoneShow = () => S.profile.phone || (S.user?.email||"").replace(/@nerivo\.local$/,"");
+const accStatus = () => S.profile.accountStatus || (S.profile.disabled ? "banned" : "active");
+const isOut = () => ["banned","suspended"].includes(accStatus());
+const restricted = () => ["locked","frozen"].includes(accStatus());
+const ACC_MSG = {
+  banned:["Account banned","Your account has been banned. Contact support if you think this is a mistake."],
+  suspended:["Account suspended","Your account is suspended for now. Contact support for details."],
+  frozen:["Balance frozen","Your balance is frozen. You can view your data but cannot take new orders."],
+  locked:["Account locked","Your account is locked. You can view your data but cannot take new orders."]
+};
+const noticeBar = () => { if(!restricted()) return ""; const [t,m] = ACC_MSG[accStatus()]; return `<div class="notice"><b>${t}.</b> ${m}${S.profile.accountNote ? "<br>Note: "+esc(S.profile.accountNote) : ""}</div>`; };
+function blockedView(){
+  const [t,m] = ACC_MSG[accStatus()] || ACC_MSG.banned;
+  return `<div class="auth"><h1>Nerivo</h1><div class="card" style="margin-top:20px;background:#fdecea;border-color:#f3c0b8"><div style="font-size:20px;font-weight:700;color:#c0392b">${t}</div><p class="sub" style="margin-top:8px;font-size:15px">${m}</p>${S.profile.accountNote ? `<p style="margin-top:10px;font-size:15px"><b>Note:</b> ${esc(S.profile.accountNote)}</p>` : ""}</div><button class="btn out" style="margin-top:20px" data-logout>Log out</button></div>`;
+}
 
 const head = title => `<header><h1>${title}</h1><span class="chip">v88</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
 
@@ -205,7 +222,7 @@ function mine(){
   const item=(i,t,go)=>`<button class="row" data-go="${go}"><span style="color:var(--g)">${IC[i]}</span><span>${t}</span><span style="color:var(--mute)">${IC.right}</span></button>`;
   return head("Mine") + `
   <div class="hero flex" style="padding:34px 22px"><div class="logo" style="width:84px;height:84px;border-radius:50%;background:#3a2c4a;font-size:34px">🧔</div>
-    <div><div style="font-size:26px;font-weight:600">${p.phone||S.user?.email||""}</div><div style="font-size:30px;font-weight:700;margin-top:8px">${fmt(p.balance)} BDT</div></div></div>
+    <div><div style="font-size:26px;font-weight:600">${esc(phoneShow())}</div><div style="font-size:30px;font-weight:700;margin-top:8px">${fmt(p.balance)} BDT</div></div></div>
   <button class="card row" style="margin-top:14px" data-go="balance"><span style="color:var(--g)">${IC.doc}</span><span>Balance Details</span></button>
   <div class="grid2"><button class="card row" style="margin:0" data-go="team"><span style="color:var(--g)">${IC.team}</span><span>My Team</span></button>
   <button class="card row" style="margin:0" data-go="lang"><span style="color:var(--g)">${IC.globe}</span><span>Language<br><small class="sub">English</small></span></button></div>
@@ -214,12 +231,12 @@ function mine(){
 }
 
 function ledgerView(){
-  const isOrders = S.view === "orders";
-  const rows = S.ledger.filter(l => !isOrders || l.kind === "purchase");
-  const label = l => l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
-  return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">${isOrders ? "Order History" : "Balance Details"}</h1></header>
+  const rows = S.ledger;
+  const debit = l => l.kind === "adjust" && l.direction === "debit";
+  const label = l => l.kind === "adjust" ? (l.reason || "Balance adjustment") : l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
+  return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">Balance Details</h1></header>
   <div class="hero"><div class="sub">Current balance</div><div class="big">${fmt(S.profile.balance)} BDT</div><div class="sub">Today's earning: ${fmt(todayProfile().income)} BDT</div></div>
-  ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:16px;font-weight:600">${label(l)}</div><div class="sub">${l.when}</div></div><b style="color:var(--g);font-size:19px">+${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet. Claim an order to see it here.</div>`}`;
+  ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:16px;font-weight:600">${esc(label(l))}</div>${l.kind==="adjust" && l.note ? `<div class="sub">${esc(l.note)}</div>` : ""}<div class="sub">${esc(l.when)}</div>${l.kind==="adjust" && l.balanceAfter!=null ? `<div class="sub" style="font-size:12px">Balance after: ${fmt(l.balanceAfter)} BDT</div>` : ""}</div><b style="color:${debit(l)?"#c0392b":"var(--g)"};font-size:19px">${debit(l)?"−":"+"}${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet.</div>`}`;
 }
 
 function teamView(){
@@ -298,10 +315,11 @@ function nav(){
 }
 
 function render(force){
-  if(S.sheet && force!==true) return;
+  if(S.sheet && force!==true && !isOut()) return;
   const app = $("#app");
   if(!S.user){ app.innerHTML = authView(); return; }
-  app.innerHTML = (S.view === "team" ? teamView() : S.view === "orders" ? ordersView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav() + (S.sheet ? sheetView() : "");
+  if(isOut()){ S.sheet = null; app.innerHTML = blockedView(); return; }
+  app.innerHTML = noticeBar() + (S.view === "team" ? teamView() : S.view === "orders" ? ordersView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav() + (S.sheet ? sheetView() : "");
 }
 
 /* ---------- Data (Firestore) ---------- */
@@ -314,7 +332,7 @@ function subscribe(uid){
       if(s.exists() && s.data().code && !S.codeChecked){ S.codeChecked = true; ensureCode(uid, s.data().code); }
       if(!s.exists() && !s.metadata.fromCache && !S.creating && !S.registering){
         S.creating = true;
-        fb.setDoc(doc(db,"users",uid),{phone:"",email:S.user?.email||"",balance:0,code:rnd6(),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()})
+        fb.setDoc(doc(db,"users",uid),{phone:(S.user?.email||"").replace(/@nerivo\.local$/,"").slice(0,20),email:S.user?.email||"",balance:0,code:rnd6(),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()})
           .catch(e=>showErr("Profile create failed: "+e.code)).finally(()=>{ S.creating=false; });
       }
     }),
@@ -342,7 +360,7 @@ async function ensureCode(uid, code){
 function autoProfile(uid){
   if(S.creating) return;
   S.creating = true;
-  fb.setDoc(fb.doc(db,"users",uid),{phone:"",email:S.user?.email||"",balance:0,code:rnd6(),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()})
+  fb.setDoc(fb.doc(db,"users",uid),{phone:(S.user?.email||"").replace(/@nerivo\.local$/,"").slice(0,20),email:S.user?.email||"",balance:0,code:rnd6(),saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()})
     .catch(e=>showErr("Profile create failed: "+e.code)).finally(()=>{ S.creating=false; });
 }
 
@@ -366,16 +384,16 @@ async function register(email, pw, phone, refCode){
     }catch(e){ note = "Referral lookup failed ("+(e.code||e.message)+"). Publish the latest Firestore rules."; }
     const prof = {phone,email,balance:0,code,saleAmount:0,saleOrders:0,purchaseAmount:0,purchaseOrders:0,income:0,createdAt:fb.serverTimestamp()};
     if(refUid) prof.referredBy = refUid;
-    const b = fb.writeBatch(db);
-    b.set(fb.doc(db,"users",uid), prof);
-    b.set(fb.doc(db,"referralCodes",code), {uid});
-    if(refUid) b.set(fb.doc(db,"users",refUid,"team",uid), {name:maskName(phone,email), joinedAt:fb.serverTimestamp()});
-    await b.commit();
-    if(note) showErr(note);
+    await fb.setDoc(fb.doc(db,"users",uid), prof);     /* step 1: profile (must work) */
+    try{ await fb.setDoc(fb.doc(db,"referralCodes",code), {uid}); }
+    catch(e){ note += " [Step 2: referral code save failed: "+(e.code||e.message)+"]"; }
+    if(refUid) try{ await fb.setDoc(fb.doc(db,"users",refUid,"team",uid), {name:maskName(phone,email), joinedAt:fb.serverTimestamp()}); }
+    catch(e){ note += " [Step 3: team link failed: "+(e.code||e.message)+"]"; }
+    if(note) showErr(note.trim());
     touchIp(uid);
   }catch(e){
     S.registering = false;
-    if(uid){ showErr("Account created but profile data failed: "+(e.code||e.message)+". Publish the latest Firestore rules."); autoProfile(uid); }
+    if(uid){ showErr("Account created but step 1 (create profile) failed: "+(e.code||e.message)+". Check the Firestore rules."); autoProfile(uid); }
     throw e;
   }finally{ S.registering = false; }
 }
@@ -412,6 +430,7 @@ async function doAuth(){
 }
 
 function addWalletSheet(){
+  if(restricted()) return toast(ACC_MSG[accStatus()][0]+": this action is disabled");
   const m=document.createElement("div"); m.className="modal";
   m.innerHTML=`<div class="sheet"><h2>Add Wallet</h2><select id="wt"><option value="bkash">bKash</option><option value="nagad">Nagad</option></select><input id="wn" type="tel" placeholder="Wallet number (01XXXXXXXXX)"><div class="err" id="we"></div><button class="btn" style="margin-top:16px" id="ws">Save wallet</button><button class="btn out" style="margin-top:10px" id="wc">Cancel</button></div>`;
   document.body.append(m);
@@ -427,6 +446,7 @@ function addWalletSheet(){
 }
 
 async function toggleWallet(id){
+  if(restricted()) return toast(ACC_MSG[accStatus()][0]+": this action is disabled");
   const w=S.wallets.find(x=>x.id===id); w.online=!w.online;
   if(!DEMO) await fb.updateDoc(fb.doc(db,"users",S.user.uid,"wallets",id),{online:w.online});
   render(); toast(w.online?"Collection started":"Wallet offline");
@@ -434,6 +454,7 @@ async function toggleWallet(id){
 
 /* Step 1: tap "Claim" -> sheet opens (nothing is written yet). Step 2: pick bKash/Nagad -> order is created + locked instantly. */
 function startClaim(id){
+  if(restricted()) return toast(ACC_MSG[accStatus()][0]+": new orders are disabled");
   const o = findOrder(id); if(!o) return;
   if(isMine(o)) S.sheet = {id, snap:{...o}, created:true, method:o.payMethod||null, sender:o.senderNumber||"", trx:o.trxId||""};
   else if(o.status==="open") S.sheet = {id, snap:{...o}, created:false, method:null, sender:"", trx:""};
