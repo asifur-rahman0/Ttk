@@ -285,7 +285,7 @@ function authView(){
   <input id="aphone" type="tel" inputmode="numeric" placeholder="Phone number (01XXXXXXXXX)" value="${esc(f.phone)}" autocomplete="tel">
   <input id="apw" type="password" placeholder="Password (6+ characters)" value="${esc(f.pw)}" autocomplete="${reg?"new-password":"current-password"}">
   ${reg?`<input id="apw2" type="password" placeholder="Confirm password" value="${esc(f.pw2)}" autocomplete="new-password">
-  <div class="flex" style="margin-top:10px;gap:8px"><input id="arc" placeholder="Referral code" style="margin-top:0;flex:1" value="${esc(f.ref)}"><button class="btn sm" style="margin-top:0" data-verifyref>Verify</button></div>
+  <div class="flex" style="margin-top:10px;gap:8px"><input id="arc" placeholder="Referral code (optional)" style="margin-top:0;flex:1" value="${esc(f.ref)}"><button class="btn sm" style="margin-top:0" data-verifyref>Verify</button></div>
   ${refLine}`:""}
   <div class="err">${esc(S.err)}</div>
   <button class="btn" style="margin-top:16px" data-auth>${reg?"Create account":"Log in"}</button>
@@ -358,7 +358,7 @@ async function register(email, pw, phone, refCode){
       try{ const r = await fb.getDoc(fb.doc(db,"referralCodes",x)); if(!r.exists()) code = x; }catch{ code = x; }
     }
     let refUid = null, note = "";
-    try{
+    if(refCode) try{
       const r = await fb.getDoc(fb.doc(db,"referralCodes",refCode));
       if(!r.exists()) note = "Referral code not found. The referrer must log in once with the latest app, or ask admin to link you.";
       else if(r.data().uid === uid) note = "You cannot use your own code.";
@@ -382,14 +382,14 @@ async function register(email, pw, phone, refCode){
 
 async function verifyRef(){
   const code = S.authForm.ref.trim();
-  if(!code){ S.refOk = false; S.refMsg = "Please enter a referral code."; render(); return; }
+  if(!code){ S.refOk = false; S.refMsg = "Enter a code to verify, or leave it empty."; render(); return; }
   S.refChecking = true; render();
   if(DEMO){ S.refChecking = false; S.refOk = true; S.refMsg = "This referral code is valid."; render(); return; }
   try{
     const r = await fb.getDoc(fb.doc(db,"referralCodes",code));
     if(r.exists()){ S.refOk = true; S.refMsg = "This referral code is valid."; }
     else { S.refOk = false; S.refMsg = "This referral code is not valid."; }
-  }catch(e){ S.refOk = false; S.refMsg = "Could not check the code right now. Try again."; }
+  }catch(e){ S.refOk = false; S.refMsg = "Could not check the code right now ("+(e.code||"network")+"). Try again."; }
   S.refChecking = false; render();
 }
 
@@ -402,8 +402,7 @@ async function doAuth(){
   if(reg){
     const pw2 = S.authForm.pw2, refCode = S.authForm.ref.trim();
     if(pw !== pw2){ S.err = "Passwords do not match."; render(); return; }
-    if(!refCode){ S.err = "Referral code is required. Please enter one and press Verify."; render(); return; }
-    if(S.refOk !== true){ await verifyRef(); if(S.refOk !== true){ S.err = "Please verify a valid referral code before continuing."; render(); return; } }
+    if(refCode && S.refOk !== true){ await verifyRef(); if(S.refOk !== true){ S.err = "This referral code is not valid. Fix it or clear the box to continue without one."; render(); return; } }
   }
   const email = phoneToEmail(phone);
   try{
