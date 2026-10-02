@@ -31,6 +31,7 @@ header h1{flex:1;font-size:30px;font-weight:700;color:var(--gd)}
 .btn{background:var(--g);color:#fff;border-radius:16px;padding:16px;font-size:17px;width:100%}
 .btn.out{background:#fff;color:var(--g);border:1.5px solid var(--g)}
 .btn.sm{width:auto;padding:14px 22px;font-size:15px}
+button:disabled{opacity:.4;cursor:not-allowed}
 .seg{display:flex;gap:10px;margin-top:16px}
 .seg button{flex:1;border-radius:30px;padding:16px;background:#fff;color:var(--mute);font-size:18px}
 .seg button.act{background:var(--teal);color:#fff}
@@ -87,7 +88,7 @@ const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
 const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"" };
+const S = { tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"" };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -104,7 +105,7 @@ const demoData = () => {
   S.profile = { phone:"+880 184****059", balance:13.63, code:"WcLvJ8", statsDate:todayStr(), saleAmount:45222, saleOrders:39, purchaseAmount:0, purchaseOrders:0, income:1245.46 };
   S.team = [{id:"t1",name:"+880 171****234",when:"10/1/2026"},{id:"t2",name:"+880 190****877",when:"9/29/2026"}];
   S.wallets = [{id:"1",type:"bkash",number:"01828975671",balance:0,online:false},{id:"2",type:"nagad",number:"01828975671",balance:5628.82,online:true}];
-  S.orders = [{id:"a",amount:111,type:"bkash",mask:"179***7kPO",rate:3,cancels:0},{id:"b",amount:104,type:"bkash",mask:"179***USsO",rate:3,cancels:0},{id:"c",amount:110,type:"nagad",mask:"179***q0HO",rate:3,cancels:0}];
+  S.orders = [{id:"a",amount:111,type:"bkash",mask:"179***7kPO",rate:3,cancels:0,status:"open",bkashNumber:"01700000001",nagadNumber:"01800000002"},{id:"b",amount:104,type:"bkash",mask:"179***USsO",rate:3,cancels:0,status:"open",bkashNumber:"01700000001",nagadNumber:"01800000002"},{id:"c",amount:110,type:"nagad",mask:"179***q0HO",rate:3,cancels:0,status:"open",bkashNumber:"01700000001",nagadNumber:"01800000002"}];
 };
 
 const toast = m => { const t = document.createElement("div"); t.className="toast"; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),2200); };
@@ -125,9 +126,15 @@ const IC = {
   power:svg('<path d="M12 3v9M6.400 6.500a8 8 0 1 0 11.200 0"/>'),
   head:svg('<path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v5H5a1 1 0 0 1-1-1zM20 14h-3v5h2a1 1 0 0 0 1-1z"/>')
 };
-const logo = t => `<div class="logo ${t==="bkash"?"bk":"ng"}">${t==="bkash"?"bK":"ন"}</div>`;
+const logo = t => t==="both" ? `<div class="logo" style="background:var(--g)">৳</div>` : `<div class="logo ${t==="bkash"?"bk":"ng"}">${t==="bkash"?"bK":"ন"}</div>`;
+const typeLabel = t => t==="both" ? "bKash / Nagad" : t;
+const ms = ts => ts?.toMillis?.() || 0;
+const HOLD = 15*60*1000;
+const isMine = o => o.status==="reserved" && o.claimedBy===S.user?.uid;
+const expired = o => o.status==="reserved" && Date.now()-(o.claimedMs||0) > HOLD;
+const visibleOrder = o => o.status==="open" || isMine(o) || expired(o);
 
-const head = title => `<header><h1>${title}</h1><span class="chip">v86</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
+const head = title => `<header><h1>${title}</h1><span class="chip">v87</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
 
 /* ---------- Screens ---------- */
 function home(){
@@ -151,14 +158,14 @@ function home(){
 
 function buy(){
   const [lo,hi] = RANGES[S.range];
-  const list = S.cur==="USDT" ? [] : S.orders.filter(o=>o.amount>=lo && o.amount<=hi);
+  const list = S.cur==="USDT" ? [] : S.orders.filter(o=>visibleOrder(o) && o.amount>=lo && o.amount<=hi);
   return head("Buy") + `
   <div class="hero"><div class="flex"><div class="sp"><h2>Buy Platform Balance</h2><div class="sub" style="font-size:16px">Choose amount and wallet.</div></div><button class="flex" style="color:var(--g)" data-go="purchases">${IC.wallet} Purchase records</button></div>
     <div class="seg" style="margin-top:14px"><button class="${S.cur==="BDT"?"act":""}" data-cur="BDT">BDT</button><button class="${S.cur==="USDT"?"act":""}" data-cur="USDT">USDT</button></div></div>
   <div class="ranges">${RLAB.map((l,i)=>`<button class="${i===S.range?"act":""}" data-range="${i}">${l}</button>`).join("")}</div>
-  ${list.length ? list.map(o=>`<div class="card"><div class="flex">${logo(o.type)}<div class="sp"><div class="big" style="margin:0;font-size:28px">${fmt(o.amount)} BDT</div><div class="sub" style="font-size:17px">${o.type}</div></div><span class="sub">${o.mask}</span></div>
+  ${list.length ? list.map(o=>`<div class="card"><div class="flex">${logo(o.type)}<div class="sp"><div class="big" style="margin:0;font-size:28px">${fmt(o.amount)} BDT</div><div class="sub" style="font-size:17px">${typeLabel(o.type)}</div></div><span class="sub">${o.mask}</span></div>
     <div class="flex" style="margin-top:12px"><div class="stats"><div><b>+${fmt(o.amount*o.rate/100)} BDT</b>Reward</div><div><b>${fmt(o.rate)}%</b>Reward rate</div><div><b>${o.cancels}</b>Cancellations</div></div>
-    <button class="btn sm" style="padding:22px 18px;font-size:14px" data-claim="${o.id}">Claim purchase order</button></div></div>`).join("")
+    <button class="btn sm" style="padding:22px 18px;font-size:14px" data-claim="${o.id}">${isMine(o) ? "Continue payment" : "Claim purchase order"}</button></div></div>`).join("")
    : `<div class="empty">No orders in this range yet. Try another amount.</div>`}`;
 }
 
@@ -209,6 +216,30 @@ function teamView(){
   ${S.team.length ? S.team.map(m=>`<div class="card flex"><div class="logo" style="background:var(--teal);border-radius:50%">${esc((m.name||"?")[0])}</div><div class="sp"><div style="font-size:17px;font-weight:600">${esc(m.name)}</div><div class="sub">Joined ${esc(m.when)}</div></div></div>`).join("") : `<div class="empty">No members yet. Share your link to invite people.</div>`}`;
 }
 
+function ordersView(){
+  const rows = [...S.myOrders].sort((a,b)=>(b.claimedMs||0)-(a.claimedMs||0));
+  const st = {reserved:["Awaiting your payment","#b26a00"],pending:["Waiting for verification","#b26a00"],done:["Approved","var(--g)"],claimed:["Approved","var(--g)"],rejected:["Rejected","#c0392b"]};
+  return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">Order History</h1></header>
+  ${rows.length ? rows.map(o=>{ const [t,c]=st[o.status]||[o.status,"var(--mute)"]; return `<div class="card"><div class="flex"><div class="sp"><div class="big" style="font-size:22px;margin:0">${fmt(o.amount)} BDT</div><div class="sub">${esc(o.payMethod||typeLabel(o.type))}${o.trxId?" · "+esc(o.trxId):""}</div></div><span class="tag" style="color:${c}">${t}</span></div></div>`; }).join("") : `<div class="empty">No orders yet. Claim an order from the Buy tab.</div>`}`;
+}
+
+function sheetView(){
+  const sh = S.sheet, o = S.orders.find(x=>x.id===sh.id) || {};
+  const m = sh.method, num = m==="bkash" ? o.bkashNumber : m==="nagad" ? o.nagadNumber : "", ml = m==="bkash" ? "bKash" : "Nagad";
+  const mb = (k,l) => { const n = k==="bkash" ? o.bkashNumber : o.nagadNumber; return `<button class="btn ${m===k?"":"out"}" style="flex:1" data-method="${k}" ${n?"":"disabled"}>${l}</button>`; };
+  return `<div class="modal"><div class="sheet">
+    <div class="flex"><h2 class="sp" style="font-size:20px">Pay ${fmt(o.amount)} BDT</h2><button data-closesheet style="font-size:28px;padding:0 8px" aria-label="Close">×</button></div>
+    <p class="sub" style="margin-top:6px">This order is reserved for you for 15 minutes. Choose the wallet you will pay with.</p>
+    <div class="flex" style="margin-top:14px">${mb("bkash","bKash")}${mb("nagad","Nagad")}</div>
+    ${m ? `<div class="tile" style="margin-top:14px"><div class="sub">Send exactly ${fmt(o.amount)} BDT to this ${ml} number</div>
+      <div class="flex"><b class="sp" style="font-size:24px;letter-spacing:1px">${esc(num)}</b><button class="btn sm out" data-copynum="${esc(num)}">Copy</button></div></div>
+      <input id="ps" type="tel" inputmode="numeric" placeholder="Your ${ml} number (sent from)" value="${esc(sh.sender)}">
+      <input id="pt" placeholder="Transaction ID" autocapitalize="characters" value="${esc(sh.trx)}">
+      <button class="btn" style="margin-top:14px" data-submitpay>Submit payment</button>
+      <p class="sub" style="margin-top:8px;font-size:13px">Your balance is added after the admin verifies your payment.</p>` : ""}
+  </div></div>`;
+}
+
 function authView(){
   if(!DEMO && !READY) return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:14px;font-size:16px">Connecting to server... ${Math.round((Date.now()-T0)/1000)}s</p><p class="sub" style="margin-top:8px">${esc(S.status||"Starting...")}</p><p class="sub" style="margin-top:8px">A slow network can take up to a minute. If it stays stuck, reload.</p><button class="btn" style="margin-top:20px" onclick="location.reload()">Reload</button></div>`;
   const reg = S.authMode==="register";
@@ -226,10 +257,11 @@ function nav(){
   return `<nav>${b("home","Home")}${b("buy","Buy")}<button class="gift" data-tab="home" aria-label="Rewards">🎁</button>${b("sell","Sell")}${b("mine","Mine")}</nav>`;
 }
 
-function render(){
+function render(force){
+  if(S.sheet && force!==true) return;
   const app = $("#app");
   if(!S.user){ app.innerHTML = authView(); return; }
-  app.innerHTML = (S.view === "team" ? teamView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav();
+  app.innerHTML = (S.view === "team" ? teamView() : S.view === "orders" ? ordersView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav() + (S.sheet ? sheetView() : "");
 }
 
 /* ---------- Data (Firestore) ---------- */
@@ -247,7 +279,8 @@ function subscribe(uid){
       }
     }),
     onS(collection(db,"users",uid,"wallets"), s=>{ S.wallets = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
-    onS(query(collection(db,"buyOrders"),where("status","==","open")), s=>{ S.orders = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
+    onS(query(collection(db,"buyOrders"),where("status","in",["open","reserved"])), s=>{ S.orders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt)}; }); render(); }),
+    onS(query(collection(db,"buyOrders"),where("claimedBy","==",uid)), s=>{ S.myOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt)}; }); render(); }),
     onS(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); }),
     onS(query(collection(db,"users",uid,"ledger"),orderBy("createdAt","desc"),limit(100)), s=>{
       S.ledger = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,when:(x.createdAt?.toDate?.()||new Date()).toLocaleString()}; }); render(); }),
@@ -312,7 +345,7 @@ async function register(email, pw){
 async function doAuth(){
   const email=$("#em").value.trim(), pw=$("#pw").value;
   S.err="";
-  if(DEMO){ S.user={email:email||"demo@nerivo.app"}; demoData(); render(); return; }
+  if(DEMO){ S.user={uid:"demo",email:email||"demo@nerivo.app"}; demoData(); render(); return; }
   try{
     if(S.authMode==="register"){
       await register(email, pw);
@@ -341,48 +374,44 @@ async function toggleWallet(id){
   render(); toast(w.online?"Collection started":"Wallet offline");
 }
 
-function demoClaim(o){
-  const p=S.profile, fresh=p.statsDate!==todayStr(), r=o.amount*o.rate/100, when=new Date().toLocaleString();
-  p.balance=(p.balance||0)+o.amount; p.income=(fresh?0:(p.income||0))+r;
-  p.purchaseAmount=(fresh?0:(p.purchaseAmount||0))+o.amount; p.purchaseOrders=(fresh?0:(p.purchaseOrders||0))+1; p.statsDate=todayStr();
-  S.ledger.unshift({id:o.id+"_reward",kind:"reward",amount:r,when},{id:o.id+"_buy",kind:"purchase",amount:o.amount,when});
-}
-
-async function claim(id){
-  const o=S.orders.find(x=>x.id===id); if(!o||S.claiming) return;
-  S.claiming=true;
+async function startClaim(id){
+  const o = S.orders.find(x=>x.id===id); if(!o || S.claiming) return;
+  if(isMine(o)){ S.sheet = {id, method:null, sender:"", trx:""}; render(true); return; }
+  S.claiming = true;
   try{
-    if(DEMO){ demoClaim(o); S.orders=S.orders.filter(x=>x.id!==id); }
-    else {
-      await fb.runTransaction(db, async t=>{
-        const oRef=fb.doc(db,"buyOrders",id), uRef=fb.doc(db,"users",S.user.uid);
-        const [os,us]=await Promise.all([t.get(oRef),t.get(uRef)]);
-        if(!os.exists()||os.data().status!=="open") throw new Error("taken");
-        if(!us.exists()) throw new Error("noprofile");
-        const od=os.data(), u=us.data()||{}, day=todayStr(), fresh=u.statsDate!==day, reward=od.amount*od.rate/100;
-        t.update(oRef,{status:"claimed",claimedBy:S.user.uid,claimedAt:fb.serverTimestamp()});
-        t.update(uRef,{
-          balance:(u.balance||0)+od.amount,
-          income:(fresh?0:(u.income||0))+reward,
-          purchaseAmount:(fresh?0:(u.purchaseAmount||0))+od.amount,
-          purchaseOrders:(fresh?0:(u.purchaseOrders||0))+1,
-          statsDate:day, lastClaim:id });
-        const L=fb.collection(db,"users",S.user.uid,"ledger");
-        t.set(fb.doc(L,id+"_buy"),{kind:"purchase",amount:od.amount,orderId:id,createdAt:fb.serverTimestamp()});
-        t.set(fb.doc(L,id+"_reward"),{kind:"reward",amount:reward,orderId:id,createdAt:fb.serverTimestamp()});
-      });
-    }
-    toast("Order claimed. Balance updated");
+    if(DEMO){ o.status="reserved"; o.claimedBy=S.user.uid; o.claimedMs=Date.now(); }
+    else await fb.updateDoc(fb.doc(db,"buyOrders",id),{status:"reserved",claimedBy:S.user.uid,claimedAt:fb.serverTimestamp()});
+    S.sheet = {id, method:null, sender:"", trx:""};
   }catch(e){
     console.error(e);
-    if(e.message==="taken") toast("Someone else claimed this order");
-    else if(e.message==="noprofile") toast("Profile is being created, try again in a moment");
-    else { toast("Could not claim order ("+(e.code||"error")+")"); showErr("Claim failed: "+(e.code||"")+" "+e.message); }
+    toast("Could not reserve this order. Someone else may have taken it");
+    showErr("Reserve failed: "+(e.code||"")+" "+e.message);
   }
-  S.claiming=false; render();
+  S.claiming = false; render(true);
+}
+
+async function submitPay(){
+  const sh = S.sheet, o = S.orders.find(x=>x.id===sh.id) || {};
+  const sender = ($("#ps")?.value||"").trim(), trx = ($("#pt")?.value||"").trim().toUpperCase();
+  sh.sender = sender; sh.trx = trx;
+  if(!/^01\d{9}$/.test(sender)) return toast("Enter your 11-digit number (01XXXXXXXXX)");
+  if(!/^[A-Z0-9]{6,20}$/.test(trx)) return toast("Enter a valid Transaction ID (6-20 letters or numbers)");
+  if(S.claiming) return;
+  S.claiming = true;
+  try{
+    if(DEMO){ S.myOrders.unshift({...o,status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx,claimedMs:Date.now()}); S.orders = S.orders.filter(x=>x.id!==sh.id); }
+    else await fb.updateDoc(fb.doc(db,"buyOrders",sh.id),{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx,submittedAt:fb.serverTimestamp()});
+    S.sheet = null; S.view = "orders"; toast("Submitted. Waiting for admin verification");
+  }catch(e){
+    console.error(e);
+    toast("Could not submit payment ("+(e.code||"error")+")");
+    showErr("Submit failed: "+(e.code||"")+" "+e.message);
+  }
+  S.claiming = false; render(true);
 }
 
 /* ---------- Events ---------- */
+document.addEventListener("input", e=>{ if(!S.sheet) return; if(e.target.id==="ps") S.sheet.sender=e.target.value; if(e.target.id==="pt") S.sheet.trx=e.target.value; });
 document.addEventListener("click", async e=>{
   const t=e.target.closest("button,a"); if(!t) return;
   const d=t.dataset;
@@ -390,7 +419,11 @@ document.addEventListener("click", async e=>{
   else if("back" in d){ S.view=null; render(); }
   else if("cur" in d){ S.cur=d.cur; render(); }
   else if("range" in d){ S.range=+d.range; render(); }
-  else if("claim" in d) claim(d.claim);
+  else if("claim" in d) startClaim(d.claim);
+  else if("method" in d){ S.sheet.method=d.method; render(true); }
+  else if("closesheet" in d){ S.sheet=null; render(true); }
+  else if("submitpay" in d) submitPay();
+  else if("copynum" in d){ try{ await navigator.clipboard.writeText(d.copynum); toast("Number copied"); }catch{ toast(d.copynum); } }
   else if("toggle" in d) toggleWallet(d.toggle);
   else if("sync" in d) toast("Balance refreshed");
   else if("add" in d) addWalletSheet();
@@ -421,7 +454,7 @@ if(!DEMO){
       READY = true;
     }catch(e){ showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); return; }
     fb.onAuthStateChanged(auth,u=>{
-      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[];
+      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sheet=null;
       render();
       if(u) subscribe(u.uid);
     });
