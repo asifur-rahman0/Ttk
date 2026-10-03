@@ -54,9 +54,9 @@ nav .gift{background:#fff;width:76px;height:76px;border-radius:50%;margin:-40px 
 .sheet{background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom,0px) + 22px)}
 .auth{padding-top:15vh}.auth h1{font-size:38px;color:var(--gd)}.err{color:#c0392b;font-size:14px;margin-top:10px}
 a.lnk{color:var(--g);text-decoration:underline;cursor:pointer}
-.htabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:14px 0 4px}
-.htabs button{border:1.5px solid var(--line);border-radius:14px;padding:10px 2px;font-size:13px;color:var(--mute);line-height:1.3;text-align:center}
-.htabs button b{display:block;font-size:18px;color:var(--ink)}
+.htabs{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:14px 0 4px}
+.htabs button{border:1.5px solid var(--line);border-radius:14px;padding:9px 1px;font-size:11.5px;color:var(--mute);line-height:1.25;text-align:center}
+.htabs button b{display:block;font-size:17px;color:var(--ink)}
 .htabs button.act{background:var(--g);color:#fff;border-color:var(--g)}.htabs button.act b{color:#fff}
 .notice{margin-top:calc(env(safe-area-inset-top,0px) + 12px);background:#fff3d6;color:#8a5a00;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5}
 :focus-visible{outline:3px solid var(--teal);outline-offset:2px}
@@ -144,11 +144,13 @@ const logo = t => t==="both" ? `<div class="logo" style="background:var(--g)">�
 const typeLabel = t => t==="both" ? "bKash / Nagad" : t;
 const ms = ts => ts?.toMillis?.() || 0;
 /* Order status: open -> created (user claimed + picked wallet) -> success / failed / lock (admin decides). Old names are mapped. */
-const NS = s => ({reserved:"created",pending:"created",done:"success",claimed:"success",rejected:"failed"})[s] || s;
-const ST = {created:["Order Create","#b26a00"],success:["Success","var(--g)"],failed:["Failed","#c0392b"],lock:["Lock","#6b4fa0"]};
+const NS = s => ({reserved:"created",done:"success",claimed:"success",rejected:"failed"})[s] || s;
+/* order status: an order that has a TrxID but is still "created" counts as pending (old data) */
+const OS = o => { const x = NS(o.status); return x==="created" && o.trxId ? "pending" : x; };
+const ST = {created:["Order Create","#b26a00"],pending:["Pending","#0b5394"],success:["Success","var(--g)"],failed:["Failed","#c0392b"],lock:["Lock","#6b4fa0"]};
 const payLabel = m => m==="bkash" ? "bKash" : m==="nagad" ? "Nagad" : (m||"");
 const findOrder = id => S.myOrders.find(x=>x.id===id) || S.orders.find(x=>x.id===id);
-const isMine = o => NS(o.status)==="created" && o.claimedBy===S.user?.uid;
+const isMine = o => OS(o)==="created" && o.claimedBy===S.user?.uid;
 const hist = (status,note) => fb.arrayUnion({status, by:"user", uid:S.user.uid, at:Date.now(), note});
 /* Account status set by admin: active / banned / suspended (cannot use app) / frozen / locked (view only, no new orders) */
 const phoneShow = () => S.profile.phone || (S.user?.email||"").replace(/@nerivo\.local$/,"");
@@ -253,14 +255,14 @@ function teamView(){
 
 function ordersView(){
   const all = [...S.myOrders].sort((a,b)=>(b.claimedMs||0)-(a.claimedMs||0));
-  const cnt = k => all.filter(o=>NS(o.status)===k).length;
-  const rows = all.filter(o=>NS(o.status)===S.hTab);
+  const cnt = k => all.filter(o=>OS(o)===k).length;
+  const rows = all.filter(o=>OS(o)===S.hTab);
   const tabs = Object.keys(ST).map(k=>`<button class="${S.hTab===k?"act":""}" data-htab="${k}"><b>${cnt(k)}</b>${ST[k][0]}</button>`).join("");
   const card = o => {
-    const st = NS(o.status), [t,c] = ST[st] || [o.status,"var(--mute)"];
+    const st = OS(o), [t,c] = ST[st] || [o.status,"var(--mute)"];
     const when = o.claimedMs ? new Date(o.claimedMs).toLocaleString() : "";
     return `<div class="card"><div class="flex"><div class="sp"><div class="big" style="font-size:22px;margin:0">${fmt(o.amount)} BDT</div><div class="sub">${esc(payLabel(o.payMethod)||typeLabel(o.type))}${o.trxId?" · "+esc(o.trxId):""}</div><div class="sub" style="font-size:12px">${esc(when)}</div></div><span class="tag" style="color:${c};border:1px solid ${c}">${t}</span></div>
-    ${st==="created" ? `<div class="flex" style="margin-top:10px;gap:8px"><button class="btn sm" data-claim="${o.id}">${o.trxId?"View payment":"Continue payment"}</button>${o.trxId?"":`<button class="btn sm out" data-cancel="${o.id}">Cancel</button>`}</div>` : st==="lock" ? `<div class="sub" style="margin-top:10px">This order is locked by admin.</div>` : ""}</div>`;
+    ${st==="created" ? `<div class="flex" style="margin-top:10px;gap:8px"><button class="btn sm" data-claim="${o.id}">${o.trxId?"View payment":"Continue payment"}</button>${o.trxId?"":`<button class="btn sm out" data-cancel="${o.id}">Cancel</button>`}</div>` : st==="pending" ? `<div class="sub" style="margin-top:10px">Waiting for admin to check your payment.${o.senderNumber ? " Sent from "+esc(o.senderNumber)+"." : ""}</div>` : st==="lock" ? `<div class="sub" style="margin-top:10px">This order is locked by admin.</div>` : ""}</div>`;
   };
   return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">Purchase History</h1></header>
   <div class="htabs">${tabs}</div>
@@ -269,9 +271,9 @@ function ordersView(){
 
 function sheetView(){
   const sh = S.sheet, o = findOrder(sh.id) || sh.snap || {};
-  const st = NS(o.status), made = !!sh.created, m = sh.method, ml = payLabel(m);
+  const st = OS(o), made = !!sh.created, m = sh.method, ml = payLabel(m);
   const num = m==="bkash" ? o.bkashNumber : m==="nagad" ? o.nagadNumber : "";
-  const closed = made && ["success","failed","lock"].includes(st);
+  const closed = made && ["pending","success","failed","lock"].includes(st);
   const mb = (k,l) => { const n = k==="bkash" ? o.bkashNumber : o.nagadNumber; return `<button class="btn out" style="flex:1" data-method="${k}" ${n?"":"disabled"}>${l}</button>`; };
   let body;
   if(!m) body = `<p class="sub" style="margin-top:6px">Choose bKash or Nagad. The order is created instantly and locked for you, so no other user can claim it.</p>
@@ -503,9 +505,9 @@ async function submitPay(){
   if(S.claiming) return;
   S.claiming = true;
   try{
-    if(DEMO){ const x = S.myOrders.find(y=>y.id===sh.id); if(x) Object.assign(x,{payMethod:sh.method,senderNumber:sender,trxId:trx}); }
-    else await fb.updateDoc(fb.doc(db,"buyOrders",sh.id),{payMethod:sh.method,senderNumber:sender,trxId:trx,submittedAt:fb.serverTimestamp(),history:hist("created","Payment proof submitted ("+trx+")")});
-    S.sheet = null; S.view = "orders"; S.hTab = "created"; toast("Submitted. Admin will update your order status");
+    if(DEMO){ const x = S.myOrders.find(y=>y.id===sh.id); if(x) Object.assign(x,{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx}); }
+    else await fb.updateDoc(fb.doc(db,"buyOrders",sh.id),{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx,submittedAt:fb.serverTimestamp(),history:hist("pending","Payment proof submitted ("+trx+")")});
+    S.sheet = null; S.view = "orders"; S.hTab = "pending"; toast("Submitted. Your order is Pending until admin checks it");
   }catch(e){
     console.error(e);
     toast("Could not submit payment ("+(e.code||"error")+")");
