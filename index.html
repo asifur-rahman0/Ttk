@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Nerivo</title>
+<title>Nova Pay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<meta name="color-scheme" content="only light"><meta name="supported-color-schemes" content="light">
 <meta name="theme-color" content="#dff1ff">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
 <style>
-:root{--g:#1383e6;--gd:#0a2f55;--sky:#38b6ff;--teal:#2ea8ff;--mint:#eaf6ff;--mint2:#d5ebff;--line:#d3e5f4;--mute:#6a8399;--ink:#0c2238;--bg:#fff;--shadow:0 10px 24px -11px rgba(19,131,230,.38);--display:"Sora","Segoe UI",system-ui,sans-serif;--body:"Figtree","Segoe UI",Roboto,system-ui,sans-serif}
+:root{color-scheme:only light;--g:#1383e6;--gd:#0a2f55;--sky:#38b6ff;--teal:#2ea8ff;--mint:#eaf6ff;--mint2:#d5ebff;--line:#d3e5f4;--mute:#6a8399;--ink:#0c2238;--bg:#fff;--shadow:0 10px 24px -11px rgba(19,131,230,.38);--display:"Sora","Segoe UI",system-ui,sans-serif;--body:"Figtree","Segoe UI",Roboto,system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
 body{font-family:var(--body);background:radial-gradient(960px 400px at 50% -96px,#cfe9ff,#eef7ff 55%,#f7fbff);color:var(--ink);display:flex;justify-content:center;min-height:100vh;font-size:14px;line-height:1.4}
 #app{width:100%;max-width:480px;min-height:100vh;position:relative;padding:0 13px 112px;background:linear-gradient(180deg,#dff1ff 0,#f3faff 192px,#fff 416px)}
@@ -99,7 +100,14 @@ a.lnk{color:var(--g);font-weight:700;text-decoration:underline;cursor:pointer}
 .htabs button b{display:block;font-size:14px;color:var(--ink)}
 .htabs button.act{background:var(--gd);color:#fff;border-color:var(--gd)}.htabs button.act b{color:#fff}
 .hscroll{display:flex;gap:10px;overflow-x:auto;margin:10px -13px 0;padding:4px 13px 11px;scrollbar-width:none;scroll-snap-type:x mandatory}
-.tut{flex:none;width:168px;scroll-snap-align:start;background:#fff;border:1px solid var(--line);border-radius:19px;padding:11px;box-shadow:var(--shadow)}
+.rsearch{display:flex;align-items:center;gap:6px;margin-top:8px;background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:4px 4px 4px 14px;box-shadow:var(--shadow)}
+.rsearch input{border:0;margin:0;padding:9px 0;box-shadow:none;border-radius:0;background:none;letter-spacing:.06em;font-weight:600;min-width:0;flex:1}
+.rsearch input:focus{box-shadow:none}
+.rsearch button{border-radius:18px;padding:9px 18px;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(160deg,#42b9ff,#1383e6)}
+.rgift{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:var(--mint);font-size:18px}
+.sup{display:flex;align-items:center;gap:11px;padding:10px 12px;border:1px solid var(--line);border-radius:16px;margin-top:9px;text-decoration:none;color:inherit;background:#fff;box-shadow:var(--shadow)}
+.sup b{display:block;font-size:14px;color:var(--gd)}.sup .s{display:block;color:var(--mute);font-size:12px}.sup .chev{color:var(--g);font-size:20px}
+.tut{display:block;text-align:left;flex:none;width:168px;scroll-snap-align:start;background:#fff;border:1px solid var(--line);border-radius:19px;padding:11px;box-shadow:var(--shadow)}
 .tut .play{height:77px;border-radius:14px;display:grid;place-items:center;color:#fff;font-size:21px;background:linear-gradient(145deg,#6fcbff,#1383e6)}
 .tut b{display:block;margin-top:10px;font-size:13px;color:var(--gd)}
 .income{display:flex;align-items:center;gap:10px;margin-top:10px;padding:11px 13px;border-radius:14px;background:linear-gradient(135deg,#e1f2ff,#cfe8ff);color:var(--gd)}
@@ -140,7 +148,7 @@ const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
 const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
+const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
 S.authForm.ref = REF;
@@ -214,17 +222,97 @@ const ACC_MSG = {
 const noticeBar = () => { if(!restricted()) return ""; const [t,m] = ACC_MSG[accStatus()]; return `<div class="notice"><b>${t}.</b> ${m}${S.profile.accountNote ? "<br>Note: "+esc(S.profile.accountNote) : ""}</div>`; };
 function blockedView(){
   const [t,m] = ACC_MSG[accStatus()] || ACC_MSG.banned;
-  return `<div class="auth"><h1>Nerivo</h1><div class="card" style="margin-top:20px;background:#fdecea;border-color:#f3c0b8"><div style="font-size:16px;font-weight:700;color:#c0392b">${t}</div><p class="sub" style="margin-top:8px;font-size:12px">${m}</p>${S.profile.accountNote ? `<p style="margin-top:10px;font-size:12px"><b>Note:</b> ${esc(S.profile.accountNote)}</p>` : ""}</div><button class="btn out" style="margin-top:20px" data-logout>Log out</button></div>`;
+  return `<div class="auth"><h1>Nova Pay</h1><div class="card" style="margin-top:20px;background:#fdecea;border-color:#f3c0b8"><div style="font-size:16px;font-weight:700;color:#c0392b">${t}</div><p class="sub" style="margin-top:8px;font-size:12px">${m}</p>${S.profile.accountNote ? `<p style="margin-top:10px;font-size:12px"><b>Note:</b> ${esc(S.profile.accountNote)}</p>` : ""}</div><button class="btn out" style="margin-top:20px" data-logout>Log out</button></div>`;
 }
 
 const head = title => `<header><button class="ib" data-go="support" aria-label="Live support">${IC.head}</button><h1>${title}<small>v88</small></h1><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button></header>`;
 
 /* ---------- Screens ---------- */
+const supIcon = (type, size) => {
+  const tg = type === "telegram", sz = size || 40;
+  return `<span style="display:inline-grid;place-items:center;flex:none;width:${sz}px;height:${sz}px;border-radius:50%;background:${tg ? "#229ED9" : "#25D366"}"><svg width="${Math.round(sz*0.58)}" height="${Math.round(sz*0.58)}" viewBox="0 0 24 24" aria-hidden="true">${tg
+    ? '<path fill="#fff" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>'
+    : '<path fill="#fff" d="M12 2.2a9.8 9.8 0 0 0-8.4 14.8L2.2 21.8l5-1.3A9.8 9.8 0 1 0 12 2.2z"/><path fill="#25D366" d="M8.7 7.2c.3-.3.9-.3 1.1.2l.8 1.7c.1.3 0 .6-.2.8l-.6.7c.7 1.5 1.8 2.6 3.3 3.3l.7-.7c.2-.2.5-.3.8-.2l1.7.8c.5.2.5.8.2 1.1-.7.8-1.5 1.2-2.5 1.1-3.2-.4-6-3.2-6.4-6.4-.1-1 .3-1.9.9-2.4z"/>'}</svg></span>`;
+};
+const supName = t => t === "telegram" ? "Telegram" : "WhatsApp";
+const supUrl = (type, raw) => {
+  raw = String(raw||"").trim();
+  if (/^https?:\/\/\S+$/i.test(raw)) return raw;
+  if (type === "telegram" && /^@?[A-Za-z0-9_]{4,}$/.test(raw)) return "https://t.me/" + raw.replace(/^@/, "");
+  if (type === "whatsapp" && /^\+?\d{8,15}$/.test(raw)) return "https://wa.me/" + raw.replace(/\D/g, "");
+  return "";
+};
+window.rcIn = v => { S.rcInput = v; };
+function redeemView(){
+  const rows = [...S.redeems].sort((a,b)=>(b.ms||0)-(a.ms||0));
+  return `<header><button class="ib" data-back aria-label="Back">${CHEV}</button><h1>Redeem</h1></header>
+  <div class="rsearch"><input id="rc" placeholder="Redeem code" autocomplete="off" autocapitalize="characters" spellcheck="false" value="${esc(S.rcInput)}" oninput="window.rcIn(this.value)"><button data-redeem ${S.redeeming ? "disabled" : ""}>${S.redeeming ? "..." : "Redeem"}</button></div>
+  <h2 class="sec">Redeem history</h2>
+  ${rows.length ? rows.map(r=>`<div class="card flex"><span class="rgift">🎁</span><div class="sp"><b>${esc(r.code)}</b><div class="sub">${esc(fmtT(r.ms))}</div></div><b style="color:var(--g);font-family:var(--display)">+${fmt(r.amount)} BDT</b></div>`).join("") : `<div class="empty">No redeem history yet</div>`}`;
+}
+async function doRedeem(){
+  if(S.redeeming) return;
+  if(restricted()) return toast(ACC_MSG[accStatus()][0]+": redeem is disabled");
+  const code = String(S.rcInput||"").trim().toUpperCase().replace(/\s+/g,"");
+  if(!/^[A-Z0-9_-]{3,24}$/.test(code)) return toast("Enter a valid redeem code");
+  if(DEMO) return toast("Demo mode: redeem works after Firebase is set up");
+  S.redeeming = true; render();
+  try{
+    const uid = S.user.uid;
+    const amount = await fb.runTransaction(db, async t=>{
+      const cRef = fb.doc(db,"redeemCodes",code), cs = await t.get(cRef);
+      if(!cs.exists()) throw new Error("Invalid redeem code");
+      const c = cs.data();
+      if(c.active !== true) throw new Error("This code is not active");
+      if(c.target === "user" && c.userId !== uid) throw new Error("This code is not valid for your account");
+      if(Number(c.maxUses||0) > 0 && Number(c.used||0) >= Number(c.maxUses)) throw new Error("This code has been fully redeemed");
+      const rRef = fb.doc(db,"users",uid,"redeems",code), rs = await t.get(rRef);
+      if(rs.exists()) throw new Error("You already redeemed this code");
+      const uRef = fb.doc(db,"users",uid), us = await t.get(uRef);
+      if(!us.exists()) throw new Error("Profile not found");
+      const amt = Number(c.amount||0), nb = Math.round((Number(us.data().balance||0)+amt)*100)/100;
+      t.set(rRef,{code,amount:c.amount,createdAt:fb.serverTimestamp()});
+      t.update(uRef,{balance:nb,lastRedeem:code});
+      t.update(cRef,{used:Number(c.used||0)+1});
+      t.set(fb.doc(fb.collection(db,"users",uid,"ledger")),{kind:"redeem",direction:"credit",amount:c.amount,code,balanceAfter:nb,createdAt:fb.serverTimestamp()});
+      return amt;
+    });
+    S.rcInput = ""; toast("Redeemed! +"+fmt(amount)+" BDT added to your balance");
+  }catch(e){
+    console.error(e);
+    toast(e.code==="permission-denied" ? "This code cannot be redeemed" : (e.message||"Redeem failed"));
+  }
+  S.redeeming = false; render();
+}
+function openSupport(){
+  const items = S.sup.filter(x=>/^https?:\/\//i.test(x.url||""));
+  const m = document.createElement("div"); m.className = "modal";
+  m.innerHTML = `<div class="sheet"><div class="flex"><h2 class="sp" style="font-family:var(--display);font-size:17px;color:var(--gd)">Live Support</h2><button id="su_x" style="font-size:24px;padding:0 6px" aria-label="Close">×</button></div>
+  <div class="sub" style="margin-bottom:6px">Tap a group or channel to chat with us.</div>
+  ${items.length ? items.map(x=>`<a class="sup" href="${esc(x.url)}" target="_blank" rel="noopener">${supIcon(x.type,40)}<span class="sp"><b>${esc(x.label)}</b><span class="s">${supName(x.type)}</span></span><span class="chev">›</span></a>`).join("") : `<div class="empty" style="padding:26px 6px">Support links are not available right now. Please try again later.</div>`}</div>`;
+  document.body.append(m);
+  const close = () => m.remove();
+  $("#su_x").onclick = close; m.addEventListener("click", e => { if(e.target === m) close(); });
+}
+const ytId = u => { const m = String(u||"").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/); return m ? m[1] : ""; };
+function playTut(i){
+  const t = S.tuts[i]; if(!t) return;
+  const y = ytId(t.url), direct = /\.(mp4|webm|ogg)(\?.*)?$/i.test(t.url);
+  if(!y && !direct){ window.open(t.url, "_blank", "noopener"); return; }
+  const m = document.createElement("div"); m.className = "modal";
+  m.innerHTML = `<div class="sheet" style="padding:22px 14px 16px"><div class="flex" style="margin-bottom:10px"><b class="sp" style="font-size:15px">${esc(t.title)}</b><button id="tv_x" style="font-size:24px;padding:0 6px" aria-label="Close">×</button></div>
+  <div style="position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000">${y
+    ? `<iframe src="https://www.youtube-nocookie.com/embed/${y}?autoplay=1&rel=0&playsinline=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`
+    : `<video controls autoplay playsinline src="${esc(t.url)}" style="position:absolute;inset:0;width:100%;height:100%"></video>`}</div></div>`;
+  document.body.append(m);
+  const close = () => m.remove();
+  $("#tv_x").onclick = close; m.addEventListener("click", e => { if(e.target === m) close(); });
+}
 function home(){
   const p = todayProfile();
   return head("Home") + `
   <div class="hero sky" style="padding:20px 16px">
-    <div style="font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.14em;opacity:.9">NERIVO</div>
+    <div style="font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.14em;opacity:.9">NOVA PAY</div>
     <div style="font-family:var(--display);font-size:20px;font-weight:700;margin-top:10px;line-height:1.2;letter-spacing:-.02em">Smart automatic income</div>
     <div style="margin-top:8px;opacity:.92">Wallet online. Rewards calculated daily.</div>
     <div class="flex" style="margin-top:20px;background:rgba(255,255,255,.18);border-radius:18px;padding:12px 14px">${IC.award}<span class="sp" style="font-weight:600">Today's income</span><b style="font-family:var(--display);font-size:16px">${fmt(p.income)} BDT</b></div>
@@ -235,8 +323,8 @@ function home(){
   <div class="panel"><h2>Rates &amp; Rewards</h2>
     <div class="grid2"><div class="tile"><div class="sub">USDT exchange</div><div class="big" style="font-size:14px">1 USDT ≈ ${fmt(S.rates.usdt)} BDT</div></div>
     <div class="tile"><div class="sub">USDT bonus</div><div class="big" style="font-size:14px;color:var(--g)">${S.rates.bonus}%</div></div></div></div>
-  <h2 class="sec">Tutorials</h2>
-  <div class="hscroll">${["Buy USDT|How to buy USDT","Add nagad wallet|Tutorial"].map(t=>{const [a,b]=t.split("|");return `<div class="tut"><div class="play">▶</div><b>${a}</b><div class="sub">${b}</div></div>`}).join("")}</div>`;
+${S.tuts.length ? `<h2 class="sec">Tutorials</h2>
+  <div class="hscroll">${S.tuts.map((t,i)=>{const y=ytId(t.url);return `<button class="tut" data-tut="${i}"><div class="play"${y?` style="background:#0a2f55 url(https://img.youtube.com/vi/${y}/hqdefault.jpg) center/cover"`:""}><span>▶</span></div><b>${esc(t.title)}</b><div class="sub">${esc(t.sub||"Tutorial")}</div></button>`}).join("")}</div>` : ""}`;
 }
 
 function buy(){
@@ -283,7 +371,7 @@ function mine(){
 function ledgerView(){
   const rows = S.ledger;
   const debit = l => (l.kind === "adjust" && l.direction === "debit") || l.kind === "withdraw";
-  const label = l => l.kind === "withdraw" ? "Sell / Withdraw" : l.kind === "withdraw_refund" ? "Withdraw refund" : l.kind === "adjust" ? (l.reason || "Balance adjustment") : l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
+  const label = l => l.kind === "redeem" ? "Redeem code ("+(l.code||"")+")" : l.kind === "withdraw" ? "Sell / Withdraw" : l.kind === "withdraw_refund" ? "Withdraw refund" : l.kind === "adjust" ? (l.reason || "Balance adjustment") : l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
   return `<header><button class="ib" data-back aria-label="Back">${CHEV}</button><h1>Balance Details</h1></header>
   <div class="hero"><div class="sub">Current balance</div><div class="big">${fmt(S.profile.balance)} BDT</div><div class="sub">Today's earning: ${fmt(todayProfile().income)} BDT</div></div>
   ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:13px;font-weight:600">${esc(label(l))}</div>${l.kind==="adjust" && l.note ? `<div class="sub">${esc(l.note)}</div>` : ""}<div class="sub">${esc(l.when)}</div>${l.kind==="adjust" && l.balanceAfter!=null ? `<div class="sub" style="font-size:11px">Balance after: ${fmt(l.balanceAfter)} BDT</div>` : ""}</div><b style="color:${debit(l)?"#c0392b":"var(--g)"};font-size:15px">${debit(l)?"−":"+"}${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet.</div>`}`;
@@ -391,13 +479,13 @@ function sheetView(){
 }
 
 function authView(){
-  if(!DEMO && !READY) return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:14px;font-size:13px">Connecting to server... ${Math.round((Date.now()-T0)/1000)}s</p><p class="sub" style="margin-top:8px">${esc(S.status||"Starting...")}</p><p class="sub" style="margin-top:8px">A slow network can take up to a minute. If it stays stuck, reload.</p><button class="btn" style="margin-top:20px" onclick="location.reload()">Reload</button></div>`;
+  if(!DEMO && !READY) return `<div class="auth"><h1>Nova Pay</h1><p class="sub" style="margin-top:14px;font-size:13px">Connecting to server... ${Math.round((Date.now()-T0)/1000)}s</p><p class="sub" style="margin-top:8px">${esc(S.status||"Starting...")}</p><p class="sub" style="margin-top:8px">A slow network can take up to a minute. If it stays stuck, reload.</p><button class="btn" style="margin-top:20px" onclick="location.reload()">Reload</button></div>`;
   const reg = S.authMode==="register", f = S.authForm;
   const refLine = !reg ? "" : S.refChecking ? `<p class="sub" style="margin-top:8px">Checking referral code...</p>`
     : S.refOk===true ? `<p style="margin-top:8px;color:var(--g);font-size:11px">✅ ${esc(S.refMsg||"This referral code is valid.")}</p>`
     : S.refOk===false ? `<p class="err" style="margin-top:8px">❌ ${esc(S.refMsg||"This referral code is not valid.")}</p>`
     : "";
-  return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:6px">${reg?"Create your account":"Log in to continue"}</p>
+  return `<div class="auth"><h1>Nova Pay</h1><p class="sub" style="margin-top:6px">${reg?"Create your account":"Log in to continue"}</p>
   ${DEMO?`<p class="sub" style="margin-top:12px;color:var(--g)">Demo mode: Firebase is not set up yet. Tap the button to preview.</p>`:""}
   <input id="aphone" type="tel" inputmode="numeric" placeholder="Phone number (01XXXXXXXXX)" value="${esc(f.phone)}" autocomplete="tel">
   <input id="apw" type="password" placeholder="Password (6+ characters)" value="${esc(f.pw)}" autocomplete="${reg?"new-password":"current-password"}">
@@ -411,7 +499,7 @@ function authView(){
 
 function nav(){
   const b=(k,l)=>`<button class="${S.tab===k?"act":""}" data-tab="${k}">${IC[k]}<span>${l}</span></button>`;
-  return `<nav>${b("home","Home")}${b("buy","Buy")}<button class="gift" data-tab="home" aria-label="Rewards">🎁</button>${b("sell","Sell")}${b("mine","Mine")}</nav>`;
+  return `<nav>${b("home","Home")}${b("buy","Buy")}<button class="gift" data-go="redeem" aria-label="Redeem code">🎁</button>${b("sell","Sell")}${b("mine","Mine")}</nav>`;
 }
 
 function render(force){
@@ -419,7 +507,7 @@ function render(force){
   const app = $("#app");
   if(!S.user){ app.innerHTML = authView(); return; }
   if(isOut()){ S.sheet = null; app.innerHTML = blockedView(); return; }
-  app.innerHTML = noticeBar() + (S.view === "team" ? teamView() : S.view === "orders" ? ordersView() : S.view === "odetail" ? orderDetailView() : S.view === "sdetail" ? sellDetailView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav() + (S.sheet ? sheetView() : "");
+  app.innerHTML = noticeBar() + (S.view === "team" ? teamView() : S.view === "orders" ? ordersView() : S.view === "odetail" ? orderDetailView() : S.view === "sdetail" ? sellDetailView() : S.view === "redeem" ? redeemView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav() + (S.sheet ? sheetView() : "");
 }
 
 /* ---------- Data (Firestore) ---------- */
@@ -444,6 +532,9 @@ function subscribe(uid){
     onS(query(collection(db,"buyOrders"),where("status","in",["open","reserved"])), s=>{ S.orders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt)}; }); render(); }),
     onS(query(collection(db,"buyOrders"),where("claimedBy","==",uid)), s=>{ S.myOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt),submittedMs:ms(x.submittedAt),reviewedMs:ms(x.reviewedAt)}; }); render(); }),
     onS(query(collection(db,"sellOrders"),where("userId","==",uid)), s=>{ S.sellOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,createdMs:ms(x.createdAt)||(x.history&&x.history[0]&&x.history[0].at)||0}; }); render(); }),
+    onS(collection(db,"users",uid,"redeems"), s=>{ S.redeems = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,ms:ms(x.createdAt)||Date.now()}; }); render(); }),
+    onS(doc(db,"settings","support"), s=>{ S.sup = (s.exists() && Array.isArray(s.data().list)) ? s.data().list : []; render(); }),
+    onS(doc(db,"settings","tutorials"), s=>{ S.tuts = (s.exists() && Array.isArray(s.data().list)) ? s.data().list : []; render(); }),
     onS(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); }),
     onS(query(collection(db,"users",uid,"ledger"),orderBy("createdAt","desc"),limit(100)), s=>{
       S.ledger = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,when:(x.createdAt?.toDate?.()||new Date()).toLocaleString()}; }); render(); }),
@@ -660,9 +751,13 @@ document.addEventListener("click", async e=>{
   else if("sync" in d) toast("Balance refreshed");
   else if("add" in d) addWalletSheet();
   else if("copylink" in d){ try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } }
-  else if("sharelink" in d){ if(navigator.share){ try{ await navigator.share({title:"Join me on Nerivo", url:refLink()}); }catch{} } else { try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } } }
+  else if("sharelink" in d){ if(navigator.share){ try{ await navigator.share({title:"Join me on Nova Pay", url:refLink()}); }catch{} } else { try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } } }
   else if("copy" in d){ try{ await navigator.clipboard.writeText(S.profile.code||""); toast("Code copied"); }catch{ toast(S.profile.code||""); } }
+  else if("go" in d && d.go==="support") openSupport();
+  else if("go" in d && d.go==="redeem"){ S.view="redeem"; render(); scrollTo(0,0); }
+  else if("redeem" in d) doRedeem();
   else if("go" in d && d.go==="collections"){ S.view="orders"; S.hTop="sell"; S.sTab="all"; render(); scrollTo(0,0); }
+  else if("tut" in d) playTut(Number(d.tut));
   else if("osdetail" in d){ S.detailSid=d.osdetail; S.view="sdetail"; render(); scrollTo(0,0); }
   else if("stab" in d){ S.sTab=d.stab; render(); }
   else if("go" in d){ const v = d.go==="purchases" ? "orders" : d.go; if(["balance","orders","team"].includes(v)){ S.view=v; if(v==="orders"){ S.hTab="all"; S.hTop="buy"; } render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
@@ -690,7 +785,7 @@ if(!DEMO){
     }catch(e){ showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); return; }
     fb.onAuthStateChanged(auth,u=>{
       if(u && !/@nerivo\.local$/i.test(u.email||"")){ fb.signOut(auth); return; }   /* not a user-panel account (e.g. an old admin session): sign out */
-      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sellOrders=[]; S.sheet=null;
+      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sellOrders=[]; S.redeems=[]; S.rcInput=""; S.sheet=null;
       render();
       if(u) subscribe(u.uid);
     });
