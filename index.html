@@ -4,82 +4,109 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nerivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#dff1ff">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
 <style>
-:root{--g:#0b7a55;--gd:#0a3d2e;--teal:#00a99d;--mint:#e6f4ec;--mint2:#dbf0e4;--line:#d9e2de;--mute:#7d8b86;--ink:#10231d;--bg:#fff}
+:root{--g:#1383e6;--gd:#0a2f55;--sky:#38b6ff;--teal:#2ea8ff;--mint:#eaf6ff;--mint2:#d5ebff;--line:#d3e5f4;--mute:#6a8399;--ink:#0c2238;--bg:#fff;--shadow:0 10px 24px -11px rgba(19,131,230,.38);--display:"Sora","Segoe UI",system-ui,sans-serif;--body:"Figtree","Segoe UI",Roboto,system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
-body{font-family:"Segoe UI",Roboto,system-ui,sans-serif;background:#eef2f0;color:var(--ink);display:flex;justify-content:center}
-#app{width:100%;max-width:480px;min-height:100vh;background:var(--bg);position:relative;padding:0 16px 120px}
+body{font-family:var(--body);background:radial-gradient(960px 400px at 50% -96px,#cfe9ff,#eef7ff 55%,#f7fbff);color:var(--ink);display:flex;justify-content:center;min-height:100vh;font-size:14px;line-height:1.4}
+#app{width:100%;max-width:480px;min-height:100vh;position:relative;padding:0 13px 112px;background:linear-gradient(180deg,#dff1ff 0,#f3faff 192px,#fff 416px)}
 button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
-input,select{font:inherit;width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:14px;margin-top:10px;background:#fff}
-header{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 22px) 0 16px}
-header h1{flex:1;font-size:30px;font-weight:700;color:var(--gd)}
-.chip{background:var(--mint);border-radius:20px;padding:10px 16px;font-size:15px;color:var(--gd)}
-.hero{background:linear-gradient(135deg,var(--mint),var(--mint2));border-radius:24px;padding:22px}
-.hero h2{font-size:22px}.sub{color:var(--mute);font-size:14px;margin-top:4px}
-.card{border:1px solid var(--line);border-radius:22px;padding:16px;margin-top:14px;background:#fff}
-.card.on{background:#f0faf5;border-color:#bfe3d0}.card.off{background:#f2f4f8}
-.list{background:var(--mint);border-radius:22px;margin-top:14px;padding:4px 14px}
-.row{display:flex;align-items:center;gap:14px;padding:18px 4px;width:100%;text-align:left;font-size:18px}
+input,select{font:inherit;width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:13px;margin-top:8px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus{outline:0;border-color:var(--sky);box-shadow:0 0 0 4px rgba(56,182,255,.2)}
+/* top bar: support on the left, title in the middle, referral code on the right */
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;margin:0 -13px 5px;padding:calc(env(safe-area-inset-top,0px) + 11px) 13px 10px;background:rgba(223,241,255,.82);-webkit-backdrop-filter:blur(11px);backdrop-filter:blur(11px)}
+header h1{flex:1;font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--gd)}
+header h1 small{font:600 10px var(--body);color:var(--mute);margin-left:6px;letter-spacing:0}
+.ib{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1.5px solid var(--line);color:var(--g);flex:none;box-shadow:0 5px 11px -6px rgba(19,131,230,.5)}
+.chip{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:8px 11px;font-size:11px;font-weight:700;color:var(--gd);letter-spacing:.02em}
+.hero{background:linear-gradient(150deg,#fff,var(--mint2));border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:var(--shadow)}
+.hero h2{font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:-.01em}.sub{color:var(--mute);font-size:12px;margin-top:3px}
+.hero.sky{position:relative;overflow:hidden;color:#fff;border:0;background:linear-gradient(145deg,#4cc0ff 0,#1d93f2 55%,#0f6fd0 100%);box-shadow:0 18px 32px -14px rgba(15,111,208,.7)}
+.hero.sky::before,.hero.sky::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.14);pointer-events:none}
+.hero.sky::before{width:152px;height:152px;right:-40px;top:-56px}
+.hero.sky::after{width:96px;height:96px;right:56px;bottom:-56px;background:rgba(255,255,255,.1)}
+.hero.sky>*{position:relative;z-index:1}
+.hero.sky .sub{color:#e3f3ff}
+.card{border:1px solid var(--line);border-radius:18px;padding:13px;margin-top:11px;background:#fff;box-shadow:var(--shadow)}
+.card.on{background:linear-gradient(160deg,#fff,#eaf6ff);border-color:#a9d8fb}.card.off{background:#f4f8fb;box-shadow:none}
+.list{background:#fff;border:1px solid var(--line);border-radius:19px;margin-top:11px;padding:4px 11px;box-shadow:var(--shadow)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:21px;margin-top:13px;padding:14px;box-shadow:var(--shadow)}
+.panel h2,.sec{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:-.01em;color:var(--gd)}
+.sec{margin:21px 2px 2px}
+.row{display:flex;align-items:center;gap:11px;padding:12px 2px;width:100%;text-align:left;font-size:14px;font-weight:600}
 .row+.row{border-top:1px solid var(--line)}.row span:nth-child(2){flex:1}
-.tile{background:#fafcfb;border-radius:16px;padding:14px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-.big{font-size:26px;font-weight:700;margin:4px 0}
-.pill{display:inline-block;background:#fff;border-radius:20px;padding:10px 18px;margin:14px 8px 0 0;color:var(--gd)}
-.btn{background:var(--g);color:#fff;border-radius:16px;padding:16px;font-size:17px;width:100%}
-.btn.out{background:#fff;color:var(--g);border:1.5px solid var(--g)}
-.btn.sm{width:auto;padding:14px 22px;font-size:15px}
+.row span:first-child{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:var(--mint);flex:none}
+.tile{background:var(--mint);border-radius:14px;padding:11px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.big{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:-.02em;margin:4px 0}
+.pill{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:16px;padding:7px 13px;margin:11px 6px 0 0;color:var(--gd);font-weight:700;font-size:11px}
+.btn{background:linear-gradient(160deg,#42b9ff,#1383e6);color:#fff;border-radius:14px;padding:13px;font-size:13px;font-weight:700;width:100%;box-shadow:0 11px 19px -10px rgba(19,131,230,.9)}
+.btn.out{background:#fff;color:var(--g);border:1.5px solid var(--sky);box-shadow:none}
+.btn.sm{width:auto;padding:11px 18px;font-size:12px}
 button:disabled{opacity:.4;cursor:not-allowed}
-.seg{display:flex;gap:10px;margin-top:16px}
-.seg button{flex:1;border-radius:30px;padding:16px;background:#fff;color:var(--mute);font-size:18px}
-.seg button.act{background:var(--teal);color:#fff}
-.ranges{display:flex;gap:10px;overflow-x:auto;padding:16px 0 4px;scrollbar-width:none}
-.ranges button{border:1.5px solid var(--line);border-radius:14px;padding:10px 16px;white-space:nowrap;font-size:17px;color:var(--mute)}
-.ranges button.act{background:var(--g);color:#fff;border-color:var(--g)}
-.logo{width:54px;height:54px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;flex:none}
+.seg{display:flex;gap:4px;margin-top:13px;background:rgba(19,131,230,.1);border-radius:18px;padding:4px}
+.seg button{flex:1;border-radius:14px;padding:10px;color:var(--mute);font-size:13px;font-weight:700}
+.seg button.act{background:#fff;color:var(--g);box-shadow:0 5px 11px -6px rgba(19,131,230,.8)}
+.ranges{display:flex;gap:6px;overflow-x:auto;padding:13px 13px 4px;margin:0 -13px;scrollbar-width:none}
+.ranges button{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:8px 13px;white-space:nowrap;font-size:12px;font-weight:600;color:var(--mute)}
+.ranges button.act{background:var(--gd);color:#fff;border-color:var(--gd)}
+.logo{width:43px;height:43px;border-radius:13px;display:grid;place-items:center;color:#fff;font-weight:700;flex:none}
 .bk{background:#e2136e}.ng{background:#ee4023}
-.stats{display:flex;flex:1;background:#f8faf9;border-radius:14px;padding:10px 4px;text-align:center;font-size:12px;color:var(--mute)}
-.stats div{flex:1}.stats b{display:block;font-size:15px;color:var(--ink)}
-.flex{display:flex;align-items:center;gap:12px}.sp{flex:1}
-.tag{border-radius:16px;padding:6px 14px;font-size:14px;background:#fff}
-nav{position:fixed;bottom:0;width:100%;max-width:480px;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr 1.1fr 1fr 1fr;padding:8px 6px calc(env(safe-area-inset-bottom,0px) + 10px)}
-nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:14px;color:var(--mute);padding:8px 0;border-radius:24px}
-nav button.act{background:var(--mint);color:var(--gd);font-weight:700}
-nav .gift{background:#fff;width:76px;height:76px;border-radius:50%;margin:-40px auto 0;border:4px solid var(--g);display:grid;place-items:center;font-size:32px;padding:0;box-shadow:0 2px 12px #0002}
-.empty{text-align:center;color:var(--mute);padding:40px 10px}
-.toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:var(--gd);color:#fff;padding:12px 20px;border-radius:24px;font-size:15px;z-index:9}
-.modal{position:fixed;inset:0;background:#0006;display:grid;place-items:end center;z-index:8}
-.sheet{background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom,0px) + 22px)}
-.auth{padding-top:15vh}.auth h1{font-size:38px;color:var(--gd)}.err{color:#c0392b;font-size:14px;margin-top:10px}
-a.lnk{color:var(--g);text-decoration:underline;cursor:pointer}
-.ohead{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 18px) 0 8px}
-.ohead h1{font-size:22px;text-align:center;color:var(--gd);font-weight:700}
-.ohead button{width:44px;height:44px;display:grid;place-items:center;color:var(--g)}
-.otabs{display:flex;border-bottom:1px solid var(--line);margin:6px -16px 0}
-.otabs button{flex:1;position:relative;padding:14px 0 16px;font-size:18px;color:#8794a3}
-.otabs button+button::before{content:"";position:absolute;left:0;top:30%;height:40%;width:1px;background:var(--line)}
-.otabs button.act{color:var(--teal)}
-.otabs button.act::after{content:"";position:absolute;left:50%;bottom:-1px;width:48px;height:4px;border-radius:4px;background:var(--teal);transform:translateX(-50%)}
-.ochips{display:flex;gap:12px;overflow-x:auto;padding:16px 0 6px;scrollbar-width:none}
-.ochips button{white-space:nowrap;background:#eef2f6;color:#7b8794;border-radius:24px;padding:13px 24px;font-size:17px}
-.ochips button.act{background:#e0f6f3;color:#119a8f}
-.ocard{display:block;width:100%;text-align:left;border:1px solid var(--line);border-radius:22px;padding:16px;margin-top:14px;background:#fff}
-.oc1{display:flex;align-items:center;gap:14px}
-.wlogo{width:60px;height:60px;border-radius:16px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;flex:none}
+.stats{display:flex;flex:1;background:var(--mint);border-radius:13px;padding:8px 4px;text-align:center;font-size:11px;color:var(--mute)}
+.stats div{flex:1}.stats b{display:block;font-size:12px;color:var(--gd)}
+.flex{display:flex;align-items:center;gap:10px}.sp{flex:1}
+.tag{border-radius:13px;padding:5px 11px;font-size:11px;font-weight:700;background:#fff;border:1px solid var(--line);color:var(--g)}
+.card.off .tag{color:var(--mute)}
+/* bottom dock: floating pill, active tab fills with sky blue, rewards button rises from the middle */
+nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);width:calc(100% - 22px);max-width:452px;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(13px);backdrop-filter:blur(13px);border:1px solid var(--line);border-radius:26px;display:grid;grid-template-columns:1fr 1fr 62px 1fr 1fr;align-items:center;padding:6px;box-shadow:0 14px 32px -13px rgba(15,111,208,.55);z-index:6}
+nav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--mute);padding:7px 0;border-radius:19px;transition:background .2s,color .2s}
+nav button.act{background:linear-gradient(160deg,#4cc0ff,#1383e6);color:#fff;box-shadow:0 8px 14px -8px rgba(19,131,230,.95)}
+nav .gift{width:51px;height:51px;border-radius:50%;margin:-30px auto 0;padding:0;background:linear-gradient(160deg,#fff,#e6f4ff);border:4px solid var(--sky);display:grid;place-items:center;font-size:22px;box-shadow:0 11px 21px -8px rgba(19,131,230,.8)}
+.empty{text-align:center;color:var(--mute);padding:32px 8px}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--gd);color:#fff;padding:10px 16px;border-radius:19px;font-size:12px;font-weight:600;z-index:9;box-shadow:0 11px 21px -10px #0a2f55}
+.modal{position:fixed;inset:0;background:rgba(10,47,85,.45);display:grid;place-items:end center;z-index:8}
+.sheet{position:relative;background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:22px 16px calc(env(safe-area-inset-bottom,0px) + 18px)}
+.sheet::before{content:"";position:absolute;top:8px;left:50%;width:35px;height:5px;border-radius:5px;background:var(--mint2);transform:translateX(-50%)}
+.auth{margin-top:11vh;padding:24px 18px 21px;background:#fff;border:1px solid var(--line);border-radius:26px;box-shadow:0 24px 48px -22px rgba(15,111,208,.55)}
+.auth h1{font-family:var(--display);font-size:30px;font-weight:800;letter-spacing:-.03em;color:var(--g)}
+.err{color:#c0392b;font-size:11px;margin-top:8px}
+a.lnk{color:var(--g);font-weight:700;text-decoration:underline;cursor:pointer}
+.ohead{display:grid;grid-template-columns:38px 1fr 38px;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 13px) 0 6px}
+.ohead h1{font-family:var(--display);font-size:16px;text-align:center;color:var(--gd);font-weight:700}
+.ohead button{width:35px;height:35px;display:grid;place-items:center;color:var(--g);background:#fff;border:1.5px solid var(--line);border-radius:50%}
+.otabs{display:flex;gap:4px;background:rgba(19,131,230,.1);border-radius:18px;padding:4px;margin:6px 0 0}
+.otabs button{flex:1;padding:10px 0;font-size:12px;font-weight:700;color:var(--mute);border-radius:14px}
+.otabs button.act{background:#fff;color:var(--g);box-shadow:0 5px 11px -6px rgba(19,131,230,.8)}
+.ochips{display:flex;gap:6px;overflow-x:auto;padding:13px 0 5px;scrollbar-width:none}
+.ochips button{white-space:nowrap;background:#fff;border:1.5px solid var(--line);color:var(--mute);border-radius:18px;padding:8px 14px;font-size:12px;font-weight:600}
+.ochips button.act{background:var(--gd);border-color:var(--gd);color:#fff}
+.ocard{display:block;width:100%;text-align:left;border:1px solid var(--line);border-radius:18px;padding:13px;margin-top:11px;background:#fff;box-shadow:var(--shadow)}
+.oc1{display:flex;align-items:center;gap:11px}
+.wlogo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:11px;flex:none}
 .wlogo.bk{background:#e2136e}.wlogo.ng{background:linear-gradient(180deg,#f58220,#e31e24)}
-.oamt,.ow{display:block}.oamt{font-size:26px;font-weight:600;line-height:1.15}.ow{color:#7b8794;font-size:18px}
-.opill{border-radius:20px;padding:9px 20px;font-size:16px;white-space:nowrap}
-.oc2{display:flex;justify-content:space-between;align-items:center;margin-top:12px;color:#7b8794;font-size:15px}.oc2 b{color:var(--teal);font-weight:400}
-.drow{display:flex;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line);font-size:16px}.drow:last-child{border-bottom:0}
-.drow span:first-child{color:var(--mute)}.drow b{font-weight:600;text-align:right;word-break:break-all}
-.htabs{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:14px 0 4px}
-.htabs button{border:1.5px solid var(--line);border-radius:14px;padding:9px 1px;font-size:11.5px;color:var(--mute);line-height:1.25;text-align:center}
-.htabs button b{display:block;font-size:17px;color:var(--ink)}
-.htabs button.act{background:var(--g);color:#fff;border-color:var(--g)}.htabs button.act b{color:#fff}
-.notice{margin-top:calc(env(safe-area-inset-top,0px) + 12px);background:#fff3d6;color:#8a5a00;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5}
-:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.oamt,.ow{display:block}.oamt{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:-.02em;line-height:1.15}.ow{color:var(--mute);font-size:13px}
+.opill{border-radius:16px;padding:6px 13px;font-size:11px;font-weight:700;white-space:nowrap}
+.oc2{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);color:var(--mute);font-size:11px}.oc2 b{color:var(--g);font-weight:700}
+.drow{display:flex;justify-content:space-between;gap:11px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.drow:last-child{border-bottom:0}
+.drow span:first-child{color:var(--mute)}.drow b{font-weight:700;text-align:right;word-break:break-all}
+.htabs{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:11px 0 4px}
+.htabs button{border:1.5px solid var(--line);border-radius:11px;padding:7px 1px;font-size:11px;color:var(--mute);line-height:1.25;text-align:center}
+.htabs button b{display:block;font-size:14px;color:var(--ink)}
+.htabs button.act{background:var(--gd);color:#fff;border-color:var(--gd)}.htabs button.act b{color:#fff}
+.hscroll{display:flex;gap:10px;overflow-x:auto;margin:10px -13px 0;padding:4px 13px 11px;scrollbar-width:none;scroll-snap-type:x mandatory}
+.tut{flex:none;width:168px;scroll-snap-align:start;background:#fff;border:1px solid var(--line);border-radius:19px;padding:11px;box-shadow:var(--shadow)}
+.tut .play{height:77px;border-radius:14px;display:grid;place-items:center;color:#fff;font-size:21px;background:linear-gradient(145deg,#6fcbff,#1383e6)}
+.tut b{display:block;margin-top:10px;font-size:13px;color:var(--gd)}
+.income{display:flex;align-items:center;gap:10px;margin-top:10px;padding:11px 13px;border-radius:14px;background:linear-gradient(135deg,#e1f2ff,#cfe8ff);color:var(--gd)}
+.income b{font-weight:700}.income .amt{font-family:var(--display);font-size:16px}
+.notice{margin-top:calc(env(safe-area-inset-top,0px) + 10px);background:#fff3d6;color:#8a5a00;border-radius:13px;padding:10px 11px;font-size:11px;line-height:1.5}
+:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
@@ -87,7 +114,7 @@ a.lnk{color:var(--g);text-decoration:underline;cursor:pointer}
 
 <script>
 var __errs=[];
-function showErr(m){__errs.push(String(m));if(__errs.length>3)__errs.shift();var d=document.getElementById('errbar')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'errbar'}));d.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;padding:12px 16px;font-size:13px;z-index:99;word-break:break-word;cursor:pointer';d.textContent='Error: '+__errs.join(' | ')+'  (tap to close)';d.onclick=function(){__errs=[];d.remove()};clearTimeout(window.__et);window.__et=setTimeout(function(){__errs=[];d.remove()},15000);}
+function showErr(m){__errs.push(String(m));if(__errs.length>3)__errs.shift();var d=document.getElementById('errbar')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'errbar'}));d.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;padding:12px 16px;font-size:11px;z-index:99;word-break:break-word;cursor:pointer';d.textContent='Error: '+__errs.join(' | ')+'  (tap to close)';d.onclick=function(){__errs=[];d.remove()};clearTimeout(window.__et);window.__et=setTimeout(function(){__errs=[];d.remove()},15000);}
 addEventListener('error',function(e){showErr(e.message)});
 addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.message)||e.reason)});
 setTimeout(function(){var a=document.getElementById('app');if(a&&a.textContent.trim()==='Loading...')showErr('The app script has not started after 8 seconds. The page is probably still downloading on a slow network. Wait a little or reload.')},8000);
@@ -143,7 +170,7 @@ const demoData = () => {
 };
 
 const toast = m => { const t = document.createElement("div"); t.className="toast"; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),2200); };
-const svg = p => `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const svg = p => `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 const IC = {
   home:svg('<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'),
   buy:svg('<rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M7 15h4"/>'),
@@ -167,7 +194,7 @@ const ms = ts => ts?.toMillis?.() || 0;
 const NS = s => ({reserved:"created",done:"success",claimed:"success",rejected:"failed"})[s] || s;
 /* order status: an order that has a TrxID but is still "created" counts as pending (old data) */
 const OS = o => { const x = NS(o.status); return x==="created" && o.trxId ? "pending" : x; };
-const ST = {created:["Created","#8a5a00","#fff3d6"],pending:["Pending","#0b5394","#dcefff"],success:["Success","#0b7a55","#e6f6ee"],failed:["Failed","#c0392b","#fdeceb"],lock:["Locked","#5a3d99","#ece6f7"],processing:["Processing","#0b5394","#dcefff"]};
+const ST = {created:["Created","#8a5a00","#fff3d6"],pending:["Pending","#0b5394","#d9edff"],success:["Success","#0b7a55","#e2f6ec"],failed:["Failed","#c0392b","#fdeceb"],lock:["Locked","#5a3d99","#ece6f7"],processing:["Processing","#0b5394","#dcefff"]};
 const payLabel = m => m==="bkash" ? "bKash" : m==="nagad" ? "Nagad" : (m||"");
 const findOrder = id => S.myOrders.find(x=>x.id===id) || S.orders.find(x=>x.id===id);
 const isMine = o => OS(o)==="created" && o.claimedBy===S.user?.uid;
@@ -187,29 +214,29 @@ const ACC_MSG = {
 const noticeBar = () => { if(!restricted()) return ""; const [t,m] = ACC_MSG[accStatus()]; return `<div class="notice"><b>${t}.</b> ${m}${S.profile.accountNote ? "<br>Note: "+esc(S.profile.accountNote) : ""}</div>`; };
 function blockedView(){
   const [t,m] = ACC_MSG[accStatus()] || ACC_MSG.banned;
-  return `<div class="auth"><h1>Nerivo</h1><div class="card" style="margin-top:20px;background:#fdecea;border-color:#f3c0b8"><div style="font-size:20px;font-weight:700;color:#c0392b">${t}</div><p class="sub" style="margin-top:8px;font-size:15px">${m}</p>${S.profile.accountNote ? `<p style="margin-top:10px;font-size:15px"><b>Note:</b> ${esc(S.profile.accountNote)}</p>` : ""}</div><button class="btn out" style="margin-top:20px" data-logout>Log out</button></div>`;
+  return `<div class="auth"><h1>Nerivo</h1><div class="card" style="margin-top:20px;background:#fdecea;border-color:#f3c0b8"><div style="font-size:16px;font-weight:700;color:#c0392b">${t}</div><p class="sub" style="margin-top:8px;font-size:12px">${m}</p>${S.profile.accountNote ? `<p style="margin-top:10px;font-size:12px"><b>Note:</b> ${esc(S.profile.accountNote)}</p>` : ""}</div><button class="btn out" style="margin-top:20px" data-logout>Log out</button></div>`;
 }
 
-const head = title => `<header><h1>${title}</h1><span class="chip">v88</span><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button><button style="color:var(--g)" data-go="support">${IC.head}</button></header>`;
+const head = title => `<header><button class="ib" data-go="support" aria-label="Live support">${IC.head}</button><h1>${title}<small>v88</small></h1><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button></header>`;
 
 /* ---------- Screens ---------- */
 function home(){
   const p = todayProfile();
   return head("Home") + `
-  <div class="hero" style="background:linear-gradient(120deg,#00a99d,#1565c0);color:#fff;padding:26px">
-    <div style="font-size:26px;font-weight:800">NERIVO</div>
-    <div style="font-size:22px;font-weight:700;margin-top:8px">Smart automatic income</div>
-    <div style="margin-top:6px;opacity:.9">Wallet online. Rewards calculated daily.</div>
+  <div class="hero sky" style="padding:20px 16px">
+    <div style="font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.14em;opacity:.9">NERIVO</div>
+    <div style="font-family:var(--display);font-size:20px;font-weight:700;margin-top:10px;line-height:1.2;letter-spacing:-.02em">Smart automatic income</div>
+    <div style="margin-top:8px;opacity:.92">Wallet online. Rewards calculated daily.</div>
+    <div class="flex" style="margin-top:20px;background:rgba(255,255,255,.18);border-radius:18px;padding:12px 14px">${IC.award}<span class="sp" style="font-weight:600">Today's income</span><b style="font-family:var(--display);font-size:16px">${fmt(p.income)} BDT</b></div>
   </div>
-  <div class="list" style="padding:16px"><h2 style="font-size:22px;font-weight:600">Today's trading</h2>
+  <div class="panel"><h2>Today's trading</h2>
     <div class="grid2"><div class="tile"><div class="sub">Sale amount</div><div class="big">${fmt(p.saleAmount)} BDT</div><div class="sub">Sale orders ${p.saleOrders||0}</div></div>
-    <div class="tile"><div class="sub">Purchase amount</div><div class="big">${fmt(p.purchaseAmount)} BDT</div><div class="sub">Purchase orders ${p.purchaseOrders||0}</div></div></div>
-    <div class="tile flex" style="margin-top:12px;color:var(--g)">${IC.award}<b style="flex:1;font-weight:600">Today's income</b><b style="font-size:22px">${fmt(p.income)} BDT</b></div></div>
-  <div class="list" style="padding:16px"><h2 style="font-size:22px;font-weight:600">Rates &amp; Rewards</h2>
-    <div class="grid2"><div class="tile"><div class="sub">USDT exchange</div><div class="big" style="font-size:20px">1 USDT ≈ ${fmt(S.rates.usdt)} BDT</div></div>
-    <div class="tile"><div class="sub">USDT bonus</div><div class="big" style="font-size:20px;color:var(--g)">${S.rates.bonus}%</div></div></div></div>
-  <h2 style="font-size:26px;margin:24px 0 4px">Tutorials</h2>
-  ${["Buy USDT|How to buy USDT","Add nagad wallet|Tutorial"].map(t=>{const [a,b]=t.split("|");return `<div class="card flex"><div class="logo" style="background:var(--teal);width:70px;height:70px">▶</div><div class="sp"><div style="font-size:20px">${a}</div><div class="sub" style="font-size:17px">Tutorial</div></div>${IC.right}</div>`}).join("")}`;
+    <div class="tile"><div class="sub">Purchase amount</div><div class="big">${fmt(p.purchaseAmount)} BDT</div><div class="sub">Purchase orders ${p.purchaseOrders||0}</div></div></div></div>
+  <div class="panel"><h2>Rates &amp; Rewards</h2>
+    <div class="grid2"><div class="tile"><div class="sub">USDT exchange</div><div class="big" style="font-size:14px">1 USDT ≈ ${fmt(S.rates.usdt)} BDT</div></div>
+    <div class="tile"><div class="sub">USDT bonus</div><div class="big" style="font-size:14px;color:var(--g)">${S.rates.bonus}%</div></div></div></div>
+  <h2 class="sec">Tutorials</h2>
+  <div class="hscroll">${["Buy USDT|How to buy USDT","Add nagad wallet|Tutorial"].map(t=>{const [a,b]=t.split("|");return `<div class="tut"><div class="play">▶</div><b>${a}</b><div class="sub">${b}</div></div>`}).join("")}</div>`;
 }
 
 function buy(){
@@ -217,35 +244,35 @@ function buy(){
   const mine = S.myOrders.filter(isMine), mineIds = new Set(mine.map(o=>o.id));
   const list = S.cur==="USDT" ? [] : [...mine, ...S.orders.filter(o=>o.status==="open" && !mineIds.has(o.id) && !(S.user && o.sellerId===S.user.uid))].filter(o=>o.amount>=lo && o.amount<=hi);
   return head("Buy") + `
-  <div class="hero"><div class="flex"><div class="sp"><h2>Buy Platform Balance</h2><div class="sub" style="font-size:16px">Choose amount and wallet.</div></div><button class="flex" style="color:var(--g)" data-go="purchases">${IC.wallet} Purchase records</button></div>
+  <div class="hero"><div class="flex"><div class="sp"><h2>Buy Platform Balance</h2><div class="sub" style="font-size:13px">Choose amount and wallet.</div></div><button class="flex" style="color:var(--g)" data-go="purchases">${IC.wallet} Purchase records</button></div>
     <div class="seg" style="margin-top:14px"><button class="${S.cur==="BDT"?"act":""}" data-cur="BDT">BDT</button><button class="${S.cur==="USDT"?"act":""}" data-cur="USDT">USDT</button></div></div>
   <div class="ranges">${RLAB.map((l,i)=>`<button class="${i===S.range?"act":""}" data-range="${i}">${l}</button>`).join("")}</div>
-  ${list.length ? list.map(o=>`<div class="card"><div class="flex">${logo(o.type)}<div class="sp"><div class="big" style="margin:0;font-size:28px">${fmt(o.amount)} BDT</div><div class="sub" style="font-size:17px">${typeLabel(o.type)}</div></div><span class="sub">${o.mask}</span></div>
+  ${list.length ? list.map(o=>`<div class="card"><div class="flex">${logo(o.type)}<div class="sp"><div class="big" style="margin:0;font-size:22px">${fmt(o.amount)} BDT</div><div class="sub" style="font-size:14px">${typeLabel(o.type)}</div></div><span class="sub">${o.mask}</span></div>
     <div class="flex" style="margin-top:12px"><div class="stats"><div><b>+${fmt(o.amount*o.rate/100)} BDT</b>Reward</div><div><b>${fmt(o.rate)}%</b>Reward rate</div><div><b>${o.cancels}</b>Cancellations</div></div>
-    <button class="btn sm" style="padding:22px 18px;font-size:14px" data-claim="${o.id}">${isMine(o) ? "Continue payment" : "Claim purchase order"}</button>${isMine(o) && !o.trxId ? `<button class="btn sm out" style="padding:22px 18px;font-size:14px;margin-left:8px" data-cancel="${o.id}">Cancel</button>` : ""}</div></div>`).join("")
+    <button class="btn sm" style="padding:15px 14px;font-size:11px" data-claim="${o.id}">${isMine(o) ? "Continue payment" : "Claim purchase order"}</button>${isMine(o) && !o.trxId ? `<button class="btn sm out" style="padding:15px 14px;font-size:11px;margin-left:8px" data-cancel="${o.id}">Cancel</button>` : ""}</div></div>`).join("")
    : `<div class="empty">No orders in this range yet. Try another amount.</div>`}`;
 }
 
 function sell(){
   const on = S.wallets.filter(w=>w.online).length;
   return head("Sell") + `
-  <div class="hero"><div class="flex"><div class="sp"><h2 style="font-size:26px">Wallet Services</h2><div class="sub" style="font-size:16px">Manage connected wallets.</div></div><button class="flex" style="color:var(--g)" data-go="collections">${IC.wallet} Sell Records</button></div>
+  <div class="hero"><div class="flex"><div class="sp"><h2 style="font-size:21px">Wallet Services</h2><div class="sub" style="font-size:13px">Manage connected wallets.</div></div><button class="flex" style="color:var(--g)" data-go="collections">${IC.wallet} Sell Records</button></div>
     <span class="pill">${S.wallets.length} connected</span><span class="pill">${on} online</span></div>
-  ${S.wallets.length ? S.wallets.map(w=>`<div class="card ${w.online?"on":"off"}"><div class="flex">${logo(w.type)}<div class="sp"><div style="font-size:26px;font-weight:600">${w.type}</div><div class="sub" style="font-size:19px">${w.number}</div></div>
+  ${S.wallets.length ? S.wallets.map(w=>`<div class="card ${w.online?"on":"off"}"><div class="flex">${logo(w.type)}<div class="sp"><div style="font-size:21px;font-weight:600">${w.type}</div><div class="sub" style="font-size:15px">${w.number}</div></div>
     <span class="tag">${w.online?"Online":"Offline"}</span><button style="color:var(--g)" data-sync="${w.id}">${IC.sync}</button></div>
-    <div class="flex" style="margin-top:14px;padding-bottom:14px;border-bottom:1px solid var(--line)"><div class="big sp" style="font-size:30px">${fmt(w.balance)} BDT</div>
-    <button class="btn sm ${w.online?"out":""}" style="min-width:150px;padding:18px" data-toggle="${w.id}">${w.online?"Go offline":"Start collection"}</button></div>
+    <div class="flex" style="margin-top:14px;padding-bottom:14px;border-bottom:1px solid var(--line)"><div class="big sp" style="font-size:24px">${fmt(w.balance)} BDT</div>
+    <button class="btn sm ${w.online?"out":""}" style="min-width:118px;padding:18px" data-toggle="${w.id}">${w.online?"Go offline":"Start collection"}</button></div>
     <div class="flex" style="justify-content:space-around;margin-top:14px;color:var(--gd)"><span>↙ Collect</span><span>↗ Pay</span><span>Today</span></div></div>`).join("")
    : `<div class="empty">No wallets yet. Add one to start collecting.</div>`}
-  <button class="btn" style="margin-top:40px;font-size:22px" data-add>Add Wallet</button>`;
+  <button class="btn" style="margin-top:26px;font-size:18px" data-add>Add Wallet</button>`;
 }
 
 function mine(){
   const p = S.profile;
   const item=(i,t,go)=>`<button class="row" data-go="${go}"><span style="color:var(--g)">${IC[i]}</span><span>${t}</span><span style="color:var(--mute)">${IC.right}</span></button>`;
   return head("Mine") + `
-  <div class="hero flex" style="padding:34px 22px"><div class="logo" style="width:84px;height:84px;border-radius:50%;background:#3a2c4a;font-size:34px">🧔</div>
-    <div><div style="font-size:26px;font-weight:600">${esc(phoneShow())}</div><div style="font-size:30px;font-weight:700;margin-top:8px">${fmt(p.balance)} BDT</div></div></div>
+  <div class="hero sky flex" style="padding:20px 16px;gap:16px"><div class="logo" style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.25);border:3px solid rgba(255,255,255,.7);font-size:26px">🧔</div>
+    <div><div style="font-size:14px;font-weight:600;opacity:.95">${esc(phoneShow())}</div><div style="font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:6px">${fmt(p.balance)} BDT</div><div style="font-size:11px;opacity:.9;margin-top:2px">Available balance</div></div></div>
   <button class="card row" style="margin-top:14px" data-go="balance"><span style="color:var(--g)">${IC.doc}</span><span>Balance Details</span></button>
   <div class="grid2"><button class="card row" style="margin:0" data-go="team"><span style="color:var(--g)">${IC.team}</span><span>My Team</span></button>
   <button class="card row" style="margin:0" data-go="lang"><span style="color:var(--g)">${IC.globe}</span><span>Language<br><small class="sub">English</small></span></button></div>
@@ -257,29 +284,29 @@ function ledgerView(){
   const rows = S.ledger;
   const debit = l => (l.kind === "adjust" && l.direction === "debit") || l.kind === "withdraw";
   const label = l => l.kind === "withdraw" ? "Sell / Withdraw" : l.kind === "withdraw_refund" ? "Withdraw refund" : l.kind === "adjust" ? (l.reason || "Balance adjustment") : l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
-  return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">Balance Details</h1></header>
+  return `<header><button class="ib" data-back aria-label="Back">${CHEV}</button><h1>Balance Details</h1></header>
   <div class="hero"><div class="sub">Current balance</div><div class="big">${fmt(S.profile.balance)} BDT</div><div class="sub">Today's earning: ${fmt(todayProfile().income)} BDT</div></div>
-  ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:16px;font-weight:600">${esc(label(l))}</div>${l.kind==="adjust" && l.note ? `<div class="sub">${esc(l.note)}</div>` : ""}<div class="sub">${esc(l.when)}</div>${l.kind==="adjust" && l.balanceAfter!=null ? `<div class="sub" style="font-size:12px">Balance after: ${fmt(l.balanceAfter)} BDT</div>` : ""}</div><b style="color:${debit(l)?"#c0392b":"var(--g)"};font-size:19px">${debit(l)?"−":"+"}${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet.</div>`}`;
+  ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:13px;font-weight:600">${esc(label(l))}</div>${l.kind==="adjust" && l.note ? `<div class="sub">${esc(l.note)}</div>` : ""}<div class="sub">${esc(l.when)}</div>${l.kind==="adjust" && l.balanceAfter!=null ? `<div class="sub" style="font-size:11px">Balance after: ${fmt(l.balanceAfter)} BDT</div>` : ""}</div><b style="color:${debit(l)?"#c0392b":"var(--g)"};font-size:15px">${debit(l)?"−":"+"}${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet.</div>`}`;
 }
 
 function teamView(){
   const link = refLink();
-  return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">My Team</h1></header>
+  return `<header><button class="ib" data-back aria-label="Back">${CHEV}</button><h1>My Team</h1></header>
   <div class="hero"><div class="sub">Your referral code</div><div class="big">${esc(S.profile.code||"...")}</div>
     <div class="sub" style="word-break:break-all;margin-top:8px">${esc(link)}</div>
     ${S.codeOk===true ? `<div class="sub" style="color:var(--g);margin-top:8px">Link active</div>` : S.codeOk===false ? `<div class="err">Link not active (${esc(S.codeErr)}). Publish the latest Firestore rules, then reload.</div>` : `<div class="sub" style="margin-top:8px">Checking link...</div>`}
     <div class="flex" style="margin-top:14px"><button class="btn sm" data-copylink>Copy link</button><button class="btn sm out" data-sharelink>Share</button></div></div>
-  <div class="card flex"><div class="sp sub">Team members</div><b style="font-size:26px">${S.team.length}</b></div>
-  ${S.team.length ? S.team.map(m=>`<div class="card flex"><div class="logo" style="background:var(--teal);border-radius:50%">${esc((m.name||"?")[0])}</div><div class="sp"><div style="font-size:17px;font-weight:600">${esc(m.name)}</div><div class="sub">Joined ${esc(m.when)}</div></div></div>`).join("") : `<div class="empty">No members yet. Share your link to invite people.</div>`}`;
+  <div class="card flex"><div class="sp sub">Team members</div><b style="font-size:21px">${S.team.length}</b></div>
+  ${S.team.length ? S.team.map(m=>`<div class="card flex"><div class="logo" style="background:var(--teal);border-radius:50%">${esc((m.name||"?")[0])}</div><div class="sp"><div style="font-size:14px;font-weight:600">${esc(m.name)}</div><div class="sub">Joined ${esc(m.when)}</div></div></div>`).join("") : `<div class="empty">No members yet. Share your link to invite people.</div>`}`;
 }
 
 const CHIPS = [["all","All"],["created","Created"],["pending","Pending"],["success","Success"],["failed","Failed"],["lock","Locked"]];
 const p2 = n => String(n).padStart(2,"0");
 const fmtT = t => { if(!t) return ""; const d = new Date(t); return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())+" "+p2(d.getHours())+":"+p2(d.getMinutes())+":"+p2(d.getSeconds()); };
 const pill = st => { const [t,c,bg] = ST[st] || [st,"#555","#eee"]; return `<span class="opill" style="color:${c};background:${bg}">${esc(t)}</span>`; };
-const wlogo = m => m==="bkash" ? `<span class="wlogo bk">bKash</span>` : m==="nagad" ? `<span class="wlogo ng">নগদ</span>` : `<span class="wlogo" style="background:#9aa8a3">BDT</span>`;
-const CHEV = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>`;
-const REFRESH = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14-4M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 4M20 20v-4h-4"/></svg>`;
+const wlogo = m => m==="bkash" ? `<span class="wlogo bk">bKash</span>` : m==="nagad" ? `<span class="wlogo ng">নগদ</span>` : `<span class="wlogo" style="background:#8aa4bb">BDT</span>`;
+const CHEV = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>`;
+const REFRESH = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14-4M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 4M20 20v-4h-4"/></svg>`;
 
 function ordersView(){
   const tabs = [["buy","BDT Buy"],["sell","BDT Sell"],["usdt","USDT"]].map(([k,l])=>`<button class="${S.hTop===k?"act":""}" data-otop="${k}">${l}</button>`).join("");
@@ -319,9 +346,9 @@ function orderDetailView(){
   ev.sort((a,b)=>a.at-b.at);
   const note = st==="pending" ? "Waiting for admin to check your payment." : st==="lock" ? "This order is locked by admin." : st==="created" ? "Send the money and submit the Transaction ID to continue." : "";
   return `${head}
-  <div class="card" style="text-align:center"><div class="oamt" style="font-size:34px">${esc(o.amount)} <span style="font-size:16px;color:var(--mute)">BDT</span></div><div style="margin-top:10px">${pill(st)}</div>${note ? `<div class="sub" style="margin-top:10px">${note}</div>` : ""}</div>
+  <div class="card" style="text-align:center"><div class="oamt" style="font-size:27px">${esc(o.amount)} <span style="font-size:13px;color:var(--mute)">BDT</span></div><div style="margin-top:10px">${pill(st)}</div>${note ? `<div class="sub" style="margin-top:10px">${note}</div>` : ""}</div>
   <div class="card">${rows.map(r=>`<div class="drow"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div>
-  ${ev.length ? `<div class="card"><b>Timeline</b>${ev.map(e=>`<div class="drow" style="display:block"><div style="font-weight:600">${esc(e.t)}</div>${e.n ? `<div class="sub">${esc(e.n)}</div>` : ""}<div class="sub" style="font-size:12px">${esc(fmtT(e.at))}</div></div>`).join("")}</div>` : ""}
+  ${ev.length ? `<div class="card"><b>Timeline</b>${ev.map(e=>`<div class="drow" style="display:block"><div style="font-weight:600">${esc(e.t)}</div>${e.n ? `<div class="sub">${esc(e.n)}</div>` : ""}<div class="sub" style="font-size:11px">${esc(fmtT(e.at))}</div></div>`).join("")}</div>` : ""}
   ${st==="created" ? `<div class="flex" style="margin-top:16px;gap:10px"><button class="btn" data-claim="${o.id}">Continue payment</button><button class="btn out" data-cancel="${o.id}">Cancel</button></div>` : ""}`;
 }
 
@@ -334,9 +361,9 @@ function sellDetailView(){
   const ev = (o.history||[]).map(h=>({at:h.at||0,t:(h.by==="admin"?"Admin":"You")+" · "+((ST[h.status]||[])[0]||h.status),n:h.by==="admin" ? (h.status==="failed" ? "Amount refunded to your balance" : "") : (h.note||"")})).sort((a,b)=>a.at-b.at);
   const note = st==="processing" ? "Your balance was deducted. Admin is processing your withdrawal." : st==="success" ? "The money was sent to your wallet." : st==="failed" ? "Withdrawal failed. The amount was refunded to your balance." : st==="lock" ? "This request is locked by admin. Contact support." : "";
   return `${head}
-  <div class="card" style="text-align:center"><div class="oamt" style="font-size:34px">${esc(o.amount)} <span style="font-size:16px;color:var(--mute)">BDT</span></div><div style="margin-top:10px">${pill(st)}</div>${note ? `<div class="sub" style="margin-top:10px">${note}</div>` : ""}</div>
+  <div class="card" style="text-align:center"><div class="oamt" style="font-size:27px">${esc(o.amount)} <span style="font-size:13px;color:var(--mute)">BDT</span></div><div style="margin-top:10px">${pill(st)}</div>${note ? `<div class="sub" style="margin-top:10px">${note}</div>` : ""}</div>
   <div class="card">${rows.map(r=>`<div class="drow"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div>
-  ${ev.length ? `<div class="card"><b>Timeline</b>${ev.map(e=>`<div class="drow" style="display:block"><div style="font-weight:600">${esc(e.t)}</div>${e.n ? `<div class="sub">${esc(e.n)}</div>` : ""}<div class="sub" style="font-size:12px">${esc(fmtT(e.at))}</div></div>`).join("")}</div>` : ""}`;
+  ${ev.length ? `<div class="card"><b>Timeline</b>${ev.map(e=>`<div class="drow" style="display:block"><div style="font-weight:600">${esc(e.t)}</div>${e.n ? `<div class="sub">${esc(e.n)}</div>` : ""}<div class="sub" style="font-size:11px">${esc(fmtT(e.at))}</div></div>`).join("")}</div>` : ""}`;
 }
 
 function sheetView(){
@@ -349,25 +376,25 @@ function sheetView(){
   if(!m) body = `<p class="sub" style="margin-top:6px">Choose bKash or Nagad. The order is created instantly and locked for you, so no other user can claim it.</p>
     <div class="flex" style="margin-top:14px">${mb("bkash","bKash")}${mb("nagad","Nagad")}</div>`;
   else if(closed) body = `<p class="sub" style="margin-top:10px">This order is now: <b style="color:${ST[st][1]}">${ST[st][0]}</b>.</p>`;
-  else body = `<div class="tile" style="margin-top:12px;background:#f0faf5;color:var(--g)">✅ Order created with ${ml}. It is locked for you only.</div>
+  else body = `<div class="tile" style="margin-top:12px;background:var(--mint);color:var(--g)">✅ Order created with ${ml}. It is locked for you only.</div>
     <div class="tile" style="margin-top:12px"><div class="sub">Send exactly ${fmt(o.amount)} BDT to this ${ml} number</div>
-      <div class="flex"><b class="sp" style="font-size:24px;letter-spacing:1px">${esc(num)}</b><button class="btn sm out" data-copynum="${esc(num)}">Copy</button></div></div>
+      <div class="flex"><b class="sp" style="font-size:19px;letter-spacing:1px">${esc(num)}</b><button class="btn sm out" data-copynum="${esc(num)}">Copy</button></div></div>
     <input id="ps" type="tel" inputmode="numeric" placeholder="Your ${ml} number (sent from)" value="${esc(sh.sender)}">
     <input id="pt" placeholder="Transaction ID" autocapitalize="characters" value="${esc(sh.trx)}">
     <button class="btn" style="margin-top:14px" data-submitpay>Submit payment</button>
-    <p class="sub" style="margin-top:8px;font-size:13px">Admin will update your order status (Success / Failed / Lock) after checking.</p>
+    <p class="sub" style="margin-top:8px;font-size:11px">Admin will update your order status (Success / Failed / Lock) after checking.</p>
     ${o.trxId ? "" : `<button class="btn sm out" style="margin-top:12px;width:100%" data-cancel="${sh.id}">Cancel and release this order</button>`}`;
   return `<div class="modal"><div class="sheet">
-    <div class="flex"><h2 class="sp" style="font-size:20px">${made ? "Pay" : "Take order"} ${fmt(o.amount)} BDT</h2><button data-closesheet style="font-size:28px;padding:0 8px" aria-label="Close">×</button></div>
+    <div class="flex"><h2 class="sp" style="font-size:16px">${made ? "Pay" : "Take order"} ${fmt(o.amount)} BDT</h2><button data-closesheet style="font-size:22px;padding:0 8px" aria-label="Close">×</button></div>
     ${body}
   </div></div>`;
 }
 
 function authView(){
-  if(!DEMO && !READY) return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:14px;font-size:16px">Connecting to server... ${Math.round((Date.now()-T0)/1000)}s</p><p class="sub" style="margin-top:8px">${esc(S.status||"Starting...")}</p><p class="sub" style="margin-top:8px">A slow network can take up to a minute. If it stays stuck, reload.</p><button class="btn" style="margin-top:20px" onclick="location.reload()">Reload</button></div>`;
+  if(!DEMO && !READY) return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:14px;font-size:13px">Connecting to server... ${Math.round((Date.now()-T0)/1000)}s</p><p class="sub" style="margin-top:8px">${esc(S.status||"Starting...")}</p><p class="sub" style="margin-top:8px">A slow network can take up to a minute. If it stays stuck, reload.</p><button class="btn" style="margin-top:20px" onclick="location.reload()">Reload</button></div>`;
   const reg = S.authMode==="register", f = S.authForm;
   const refLine = !reg ? "" : S.refChecking ? `<p class="sub" style="margin-top:8px">Checking referral code...</p>`
-    : S.refOk===true ? `<p style="margin-top:8px;color:var(--g);font-size:14px">✅ ${esc(S.refMsg||"This referral code is valid.")}</p>`
+    : S.refOk===true ? `<p style="margin-top:8px;color:var(--g);font-size:11px">✅ ${esc(S.refMsg||"This referral code is valid.")}</p>`
     : S.refOk===false ? `<p class="err" style="margin-top:8px">❌ ${esc(S.refMsg||"This referral code is not valid.")}</p>`
     : "";
   return `<div class="auth"><h1>Nerivo</h1><p class="sub" style="margin-top:6px">${reg?"Create your account":"Log in to continue"}</p>
