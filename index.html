@@ -215,7 +215,7 @@ function home(){
 function buy(){
   const [lo,hi] = RANGES[S.range];
   const mine = S.myOrders.filter(isMine), mineIds = new Set(mine.map(o=>o.id));
-  const list = S.cur==="USDT" ? [] : [...mine, ...S.orders.filter(o=>o.status==="open" && !mineIds.has(o.id))].filter(o=>o.amount>=lo && o.amount<=hi);
+  const list = S.cur==="USDT" ? [] : [...mine, ...S.orders.filter(o=>o.status==="open" && !mineIds.has(o.id) && !(S.user && o.sellerId===S.user.uid))].filter(o=>o.amount>=lo && o.amount<=hi);
   return head("Buy") + `
   <div class="hero"><div class="flex"><div class="sp"><h2>Buy Platform Balance</h2><div class="sub" style="font-size:16px">Choose amount and wallet.</div></div><button class="flex" style="color:var(--g)" data-go="purchases">${IC.wallet} Purchase records</button></div>
     <div class="seg" style="margin-top:14px"><button class="${S.cur==="BDT"?"act":""}" data-cur="BDT">BDT</button><button class="${S.cur==="USDT"?"act":""}" data-cur="USDT">USDT</button></div></div>
@@ -231,7 +231,6 @@ function sell(){
   return head("Sell") + `
   <div class="hero"><div class="flex"><div class="sp"><h2 style="font-size:26px">Wallet Services</h2><div class="sub" style="font-size:16px">Manage connected wallets.</div></div><button class="flex" style="color:var(--g)" data-go="collections">${IC.wallet} Sell Records</button></div>
     <span class="pill">${S.wallets.length} connected</span><span class="pill">${on} online</span></div>
-  <button class="btn" style="margin-top:14px" data-sellbal>Sell balance (Withdraw) · ${fmt(S.profile.balance)} BDT</button>
   ${S.wallets.length ? S.wallets.map(w=>`<div class="card ${w.online?"on":"off"}"><div class="flex">${logo(w.type)}<div class="sp"><div style="font-size:26px;font-weight:600">${w.type}</div><div class="sub" style="font-size:19px">${w.number}</div></div>
     <span class="tag">${w.online?"Online":"Offline"}</span><button style="color:var(--g)" data-sync="${w.id}">${IC.sync}</button></div>
     <div class="flex" style="margin-top:14px;padding-bottom:14px;border-bottom:1px solid var(--line)"><div class="big sp" style="font-size:30px">${fmt(w.balance)} BDT</div>
@@ -298,7 +297,7 @@ function ordersView(){
     const all = [...S.sellOrders].sort((a,b)=>(b.createdMs||0)-(a.createdMs||0));
     const rows = S.sTab === "all" ? all : all.filter(o=>o.status===S.sTab);
     const card = o => `<button class="ocard" data-osdetail="${o.id}"><span class="oc1">${wlogo(o.method)}<span class="sp"><span class="oamt">${esc(o.amount)}</span><span class="ow">${esc(o.number||"")}</span></span>${pill(o.status)}</span><span class="oc2"><span>${esc(fmtT(o.createdMs))}</span><b>Details ›</b></span></button>`;
-    body = `<div class="ochips">${chips}</div><button class="btn" style="margin-top:6px" data-sellbal>Sell balance (Withdraw)</button>` + (rows.length ? rows.map(card).join("") : `<div class="empty">No Data</div>`);
+    body = `<div class="ochips">${chips}</div>` + (rows.length ? rows.map(card).join("") : `<div class="empty">No Data</div>`);
   }
   return `<div class="ohead"><button data-back aria-label="Back">${CHEV}</button><h1>Order History</h1><button data-orefresh aria-label="Refresh">${REFRESH}</button></div><div class="otabs">${tabs}</div>${body}`;
 }
@@ -338,58 +337,6 @@ function sellDetailView(){
   <div class="card" style="text-align:center"><div class="oamt" style="font-size:34px">${esc(o.amount)} <span style="font-size:16px;color:var(--mute)">BDT</span></div><div style="margin-top:10px">${pill(st)}</div>${note ? `<div class="sub" style="margin-top:10px">${note}</div>` : ""}</div>
   <div class="card">${rows.map(r=>`<div class="drow"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div>
   ${ev.length ? `<div class="card"><b>Timeline</b>${ev.map(e=>`<div class="drow" style="display:block"><div style="font-weight:600">${esc(e.t)}</div>${e.n ? `<div class="sub">${esc(e.n)}</div>` : ""}<div class="sub" style="font-size:12px">${esc(fmtT(e.at))}</div></div>`).join("")}</div>` : ""}`;
-}
-
-const MIN_SELL = 100;
-function sellSheet(){
-  if(restricted()) return toast(ACC_MSG[accStatus()][0]+": selling is disabled");
-  const opts = S.wallets.map(w=>`<option value="${esc(w.type)}|${esc(w.number)}">${payLabel(w.type)} · ${esc(w.number)}</option>`).join("");
-  const m = document.createElement("div"); m.className = "modal";
-  m.innerHTML = `<div class="sheet"><div class="flex"><h2 class="sp" style="font-size:20px">Sell balance</h2><button id="sl_x" style="font-size:28px;padding:0 8px" aria-label="Close">×</button></div>
-  <div class="tile" style="margin-top:12px"><div class="sub">Available balance</div><div class="big">${fmt(S.profile.balance)} BDT</div></div>
-  ${opts ? `<select id="sl_w"><option value="">Choose from my wallets...</option>${opts}</select>` : ""}
-  <select id="sl_m"><option value="bkash">bKash</option><option value="nagad">Nagad</option></select>
-  <input id="sl_n" type="tel" inputmode="numeric" placeholder="Receive number (01XXXXXXXXX)">
-  <input id="sl_a" type="number" inputmode="decimal" min="${MIN_SELL}" placeholder="Amount (min ${MIN_SELL} BDT)">
-  <div class="err" id="sl_e"></div>
-  <button class="btn" style="margin-top:14px" id="sl_ok">Sell now</button>
-  <p class="sub" style="margin-top:8px;font-size:13px">The amount is cut from your balance right away and the request goes to Processing. Admin will send the money to your wallet.</p></div>`;
-  document.body.append(m);
-  $("#sl_x").onclick = () => m.remove();
-  if($("#sl_w")) $("#sl_w").onchange = e => { const v = e.target.value; if(!v) return; const [t,n] = v.split("|"); $("#sl_m").value = t; $("#sl_n").value = n; };
-  $("#sl_ok").onclick = async () => {
-    const method = $("#sl_m").value, number = $("#sl_n").value.trim(), amt = Math.round((Number($("#sl_a").value)||0)*100)/100, err = $("#sl_e");
-    if(!/^01\d{9}$/.test(number)){ err.textContent = "Enter an 11-digit number starting with 01."; return; }
-    if(!(amt >= MIN_SELL)){ err.textContent = "Minimum amount is "+MIN_SELL+" BDT."; return; }
-    if(amt > Number(S.profile.balance||0)){ err.textContent = "Not enough balance."; return; }
-    if(S.selling) return;
-    if(!confirm("Sell "+fmt(amt)+" BDT to "+payLabel(method)+" "+number+"?\n\nThe amount will be cut from your balance now.")) return;
-    S.selling = true; $("#sl_ok").disabled = true;
-    try{
-      if(DEMO){
-        S.profile.balance = Number(S.profile.balance||0) - amt;
-        S.sellOrders.unshift({id:String(Date.now()),amount:amt,method,number,status:"processing",createdMs:Date.now(),history:[{status:"processing",by:"user",at:Date.now(),note:"Sell requested"}]});
-      } else {
-        const uid = S.user.uid;
-        await fb.runTransaction(db, async t=>{
-          const uRef = fb.doc(db,"users",uid), us = await t.get(uRef);
-          if(!us.exists()) throw new Error("Profile not found");
-          const cur = Number(us.data().balance||0);
-          if(amt > cur) throw new Error("Not enough balance");
-          const nb = Math.round((cur-amt)*100)/100, sRef = fb.doc(fb.collection(db,"sellOrders"));
-          t.update(uRef,{balance:nb,lastSellId:sRef.id});
-          t.set(sRef,{userId:uid,amount:amt,method,number,status:"processing",createdAt:fb.serverTimestamp(),history:[{status:"processing",by:"user",uid,at:Date.now(),note:"Sell requested"}]});
-          t.set(fb.doc(fb.collection(db,"users",uid,"ledger")),{kind:"withdraw",direction:"debit",amount:amt,orderId:sRef.id,balanceAfter:nb,createdAt:fb.serverTimestamp()});
-        });
-      }
-      m.remove(); S.view = "orders"; S.hTop = "sell"; S.sTab = "all"; render(); scrollTo(0,0); toast("Sell request sent. Status: Processing");
-    }catch(e){
-      console.error(e);
-      err.textContent = e.message==="Not enough balance" ? "Not enough balance." : "Could not sell ("+(e.code||e.message)+")";
-      $("#sl_ok").disabled = false;
-    }
-    S.selling = false;
-  };
 }
 
 function sheetView(){
@@ -588,6 +535,7 @@ function startClaim(id){
   if(restricted()) return toast(ACC_MSG[accStatus()][0]+": new orders are disabled");
   const o = findOrder(id); if(!o) return;
   if(isMine(o)) S.sheet = {id, snap:{...o}, created:true, method:o.payMethod||null, sender:o.senderNumber||"", trx:o.trxId||""};
+  else if(S.user && o.sellerId===S.user.uid) return toast("This order is not available");
   else if(o.status==="open") S.sheet = {id, snap:{...o}, created:false, method:null, sender:"", trx:""};
   else return toast("This order is no longer available");
   render(true);
@@ -608,7 +556,7 @@ async function pickMethod(m){
   try{
     if(!DEMO) await fb.runTransaction(db, async t=>{
       const ref = fb.doc(db,"buyOrders",sh.id), snap = await t.get(ref);
-      if(!snap.exists() || snap.data().status !== "open") throw new Error("taken");
+      if(!snap.exists() || snap.data().status !== "open" || snap.data().sellerId === uid) throw new Error("taken");
       t.update(ref,{status:"created",claimedBy:uid,claimedAt:fb.serverTimestamp(),payMethod:m,history:hist("created","Claimed with "+payLabel(m))});
     });
   }catch(e){
@@ -690,7 +638,6 @@ document.addEventListener("click", async e=>{
   else if("go" in d && d.go==="collections"){ S.view="orders"; S.hTop="sell"; S.sTab="all"; render(); scrollTo(0,0); }
   else if("osdetail" in d){ S.detailSid=d.osdetail; S.view="sdetail"; render(); scrollTo(0,0); }
   else if("stab" in d){ S.sTab=d.stab; render(); }
-  else if("sellbal" in d) sellSheet();
   else if("go" in d){ const v = d.go==="purchases" ? "orders" : d.go; if(["balance","orders","team"].includes(v)){ S.view=v; if(v==="orders"){ S.hTab="all"; S.hTop="buy"; } render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
   else if("mode" in d){ S.authMode=S.authMode==="login"?"register":"login"; S.err=""; S.refOk=undefined; S.refMsg=""; render(); }
   else if("auth" in d) doAuth();
