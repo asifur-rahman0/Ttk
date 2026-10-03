@@ -153,9 +153,10 @@ const hist = (status,note) => fb.arrayUnion({status, by:"user", uid:S.user.uid, 
 /* Account status set by admin: active / banned / suspended (cannot use app) / frozen / locked (view only, no new orders) */
 const phoneShow = () => S.profile.phone || (S.user?.email||"").replace(/@nerivo\.local$/,"");
 const accStatus = () => S.profile.accountStatus || (S.profile.disabled ? "banned" : "active");
-const isOut = () => ["banned","suspended"].includes(accStatus());
+const isOut = () => ["banned","suspended","deleted"].includes(accStatus());
 const restricted = () => ["locked","frozen"].includes(accStatus());
 const ACC_MSG = {
+  deleted:["Account deleted","This account has been deleted. Contact support if you need help."],
   banned:["Account banned","Your account has been banned. Contact support if you think this is a mistake."],
   suspended:["Account suspended","Your account is suspended for now. Contact support for details."],
   frozen:["Balance frozen","Your balance is frozen. You can view your data but cannot take new orders."],
@@ -328,6 +329,10 @@ function subscribe(uid){
   const onS = (r,cb) => onSnapshot(r,cb,e=>showErr(e.code+": "+e.message));
   unsubs.forEach(u=>u()); unsubs=[
     onS(doc(db,"users",uid), s=>{
+      if(s.exists() && s.data().accountStatus === "deleted"){      /* deleted by admin: sign out right away */
+        S.profile = {}; S.authMode = "login"; S.err = "This account has been deleted. Contact support.";
+        fb.signOut(auth); return;
+      }
       S.profile = s.data()||{}; render();
       if(s.exists() && s.data().code && !S.codeChecked){ S.codeChecked = true; ensureCode(uid, s.data().code); }
       if(!s.exists() && !s.metadata.fromCache && !S.creating && !S.registering){
@@ -577,6 +582,7 @@ if(!DEMO){
       READY = true;
     }catch(e){ showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); return; }
     fb.onAuthStateChanged(auth,u=>{
+      if(u && !/@nerivo\.local$/i.test(u.email||"")){ fb.signOut(auth); return; }   /* not a user-panel account (e.g. an old admin session): sign out */
       S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sheet=null;
       render();
       if(u) subscribe(u.uid);
