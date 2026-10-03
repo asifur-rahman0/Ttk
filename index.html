@@ -113,7 +113,7 @@ const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
 const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
+const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
 S.authForm.ref = REF;
@@ -167,7 +167,7 @@ const ms = ts => ts?.toMillis?.() || 0;
 const NS = s => ({reserved:"created",done:"success",claimed:"success",rejected:"failed"})[s] || s;
 /* order status: an order that has a TrxID but is still "created" counts as pending (old data) */
 const OS = o => { const x = NS(o.status); return x==="created" && o.trxId ? "pending" : x; };
-const ST = {created:["Created","#8a5a00","#fff3d6"],pending:["Pending","#0b5394","#dcefff"],success:["Success","#0b7a55","#e6f6ee"],failed:["Failed","#c0392b","#fdeceb"],lock:["Locked","#5a3d99","#ece6f7"]};
+const ST = {created:["Created","#8a5a00","#fff3d6"],pending:["Pending","#0b5394","#dcefff"],success:["Success","#0b7a55","#e6f6ee"],failed:["Failed","#c0392b","#fdeceb"],lock:["Locked","#5a3d99","#ece6f7"],processing:["Processing","#0b5394","#dcefff"]};
 const payLabel = m => m==="bkash" ? "bKash" : m==="nagad" ? "Nagad" : (m||"");
 const findOrder = id => S.myOrders.find(x=>x.id===id) || S.orders.find(x=>x.id===id);
 const isMine = o => OS(o)==="created" && o.claimedBy===S.user?.uid;
@@ -229,8 +229,9 @@ function buy(){
 function sell(){
   const on = S.wallets.filter(w=>w.online).length;
   return head("Sell") + `
-  <div class="hero"><div class="flex"><div class="sp"><h2 style="font-size:26px">Wallet Services</h2><div class="sub" style="font-size:16px">Manage connected wallets.</div></div><button class="flex" style="color:var(--g)" data-go="collections">${IC.wallet} Collection Records</button></div>
+  <div class="hero"><div class="flex"><div class="sp"><h2 style="font-size:26px">Wallet Services</h2><div class="sub" style="font-size:16px">Manage connected wallets.</div></div><button class="flex" style="color:var(--g)" data-go="collections">${IC.wallet} Sell Records</button></div>
     <span class="pill">${S.wallets.length} connected</span><span class="pill">${on} online</span></div>
+  <button class="btn" style="margin-top:14px" data-sellbal>Sell balance (Withdraw) · ${fmt(S.profile.balance)} BDT</button>
   ${S.wallets.length ? S.wallets.map(w=>`<div class="card ${w.online?"on":"off"}"><div class="flex">${logo(w.type)}<div class="sp"><div style="font-size:26px;font-weight:600">${w.type}</div><div class="sub" style="font-size:19px">${w.number}</div></div>
     <span class="tag">${w.online?"Online":"Offline"}</span><button style="color:var(--g)" data-sync="${w.id}">${IC.sync}</button></div>
     <div class="flex" style="margin-top:14px;padding-bottom:14px;border-bottom:1px solid var(--line)"><div class="big sp" style="font-size:30px">${fmt(w.balance)} BDT</div>
@@ -255,8 +256,8 @@ function mine(){
 
 function ledgerView(){
   const rows = S.ledger;
-  const debit = l => l.kind === "adjust" && l.direction === "debit";
-  const label = l => l.kind === "adjust" ? (l.reason || "Balance adjustment") : l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
+  const debit = l => (l.kind === "adjust" && l.direction === "debit") || l.kind === "withdraw";
+  const label = l => l.kind === "withdraw" ? "Sell / Withdraw" : l.kind === "withdraw_refund" ? "Withdraw refund" : l.kind === "adjust" ? (l.reason || "Balance adjustment") : l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
   return `<header><button data-back style="font-size:34px;color:var(--gd);padding:0 8px" aria-label="Back">‹</button><h1 style="font-size:24px">Balance Details</h1></header>
   <div class="hero"><div class="sub">Current balance</div><div class="big">${fmt(S.profile.balance)} BDT</div><div class="sub">Today's earning: ${fmt(todayProfile().income)} BDT</div></div>
   ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:16px;font-weight:600">${esc(label(l))}</div>${l.kind==="adjust" && l.note ? `<div class="sub">${esc(l.note)}</div>` : ""}<div class="sub">${esc(l.when)}</div>${l.kind==="adjust" && l.balanceAfter!=null ? `<div class="sub" style="font-size:12px">Balance after: ${fmt(l.balanceAfter)} BDT</div>` : ""}</div><b style="color:${debit(l)?"#c0392b":"var(--g)"};font-size:19px">${debit(l)?"−":"+"}${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet.</div>`}`;
@@ -291,6 +292,14 @@ function ordersView(){
     const card = o => `<button class="ocard" data-odetail="${o.id}"><span class="oc1">${wlogo(o.payMethod)}<span class="sp"><span class="oamt">${esc(o.amount)}</span><span class="ow">${esc(o.payMethod||"")}</span></span>${pill(OS(o))}</span><span class="oc2"><span>${esc(fmtT(o.claimedMs))}</span><b>Details ›</b></span></button>`;
     body = `<div class="ochips">${chips}</div>` + (rows.length ? rows.map(card).join("") : `<div class="empty">No Data</div>`);
   }
+  if(S.hTop === "sell"){
+    const SC = [["all","All"],["processing","Processing"],["success","Success"],["failed","Failed"],["lock","Locked"]];
+    const chips = SC.map(([k,l])=>`<button class="${S.sTab===k?"act":""}" data-stab="${k}">${l}</button>`).join("");
+    const all = [...S.sellOrders].sort((a,b)=>(b.createdMs||0)-(a.createdMs||0));
+    const rows = S.sTab === "all" ? all : all.filter(o=>o.status===S.sTab);
+    const card = o => `<button class="ocard" data-osdetail="${o.id}"><span class="oc1">${wlogo(o.method)}<span class="sp"><span class="oamt">${esc(o.amount)}</span><span class="ow">${esc(o.number||"")}</span></span>${pill(o.status)}</span><span class="oc2"><span>${esc(fmtT(o.createdMs))}</span><b>Details ›</b></span></button>`;
+    body = `<div class="ochips">${chips}</div><button class="btn" style="margin-top:6px" data-sellbal>Sell balance (Withdraw)</button>` + (rows.length ? rows.map(card).join("") : `<div class="empty">No Data</div>`);
+  }
   return `<div class="ohead"><button data-back aria-label="Back">${CHEV}</button><h1>Order History</h1><button data-orefresh aria-label="Refresh">${REFRESH}</button></div><div class="otabs">${tabs}</div>${body}`;
 }
 
@@ -315,6 +324,72 @@ function orderDetailView(){
   <div class="card">${rows.map(r=>`<div class="drow"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div>
   ${ev.length ? `<div class="card"><b>Timeline</b>${ev.map(e=>`<div class="drow" style="display:block"><div style="font-weight:600">${esc(e.t)}</div>${e.n ? `<div class="sub">${esc(e.n)}</div>` : ""}<div class="sub" style="font-size:12px">${esc(fmtT(e.at))}</div></div>`).join("")}</div>` : ""}
   ${st==="created" ? `<div class="flex" style="margin-top:16px;gap:10px"><button class="btn" data-claim="${o.id}">Continue payment</button><button class="btn out" data-cancel="${o.id}">Cancel</button></div>` : ""}`;
+}
+
+function sellDetailView(){
+  const head = `<div class="ohead"><button data-back aria-label="Back">${CHEV}</button><h1>Sell Details</h1><span></span></div>`;
+  const o = S.sellOrders.find(x=>x.id===S.detailSid);
+  if(!o) return head + `<div class="empty">Order not found</div>`;
+  const st = o.status;
+  const rows = [["Order ID",String(o.id).slice(0,8).toUpperCase()],["Type","BDT Sell"],["Wallet",payLabel(o.method)],["Amount",fmt(o.amount)+" BDT"],["Receive number",o.number],["Created",fmtT(o.createdMs)],["Updated",fmtT(ms(o.reviewedAt))]].filter(r=>r[1]);
+  const ev = (o.history||[]).map(h=>({at:h.at||0,t:(h.by==="admin"?"Admin":"You")+" · "+((ST[h.status]||[])[0]||h.status),n:h.by==="admin" ? (h.status==="failed" ? "Amount refunded to your balance" : "") : (h.note||"")})).sort((a,b)=>a.at-b.at);
+  const note = st==="processing" ? "Your balance was deducted. Admin is processing your withdrawal." : st==="success" ? "The money was sent to your wallet." : st==="failed" ? "Withdrawal failed. The amount was refunded to your balance." : st==="lock" ? "This request is locked by admin. Contact support." : "";
+  return `${head}
+  <div class="card" style="text-align:center"><div class="oamt" style="font-size:34px">${esc(o.amount)} <span style="font-size:16px;color:var(--mute)">BDT</span></div><div style="margin-top:10px">${pill(st)}</div>${note ? `<div class="sub" style="margin-top:10px">${note}</div>` : ""}</div>
+  <div class="card">${rows.map(r=>`<div class="drow"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div>
+  ${ev.length ? `<div class="card"><b>Timeline</b>${ev.map(e=>`<div class="drow" style="display:block"><div style="font-weight:600">${esc(e.t)}</div>${e.n ? `<div class="sub">${esc(e.n)}</div>` : ""}<div class="sub" style="font-size:12px">${esc(fmtT(e.at))}</div></div>`).join("")}</div>` : ""}`;
+}
+
+const MIN_SELL = 100;
+function sellSheet(){
+  if(restricted()) return toast(ACC_MSG[accStatus()][0]+": selling is disabled");
+  const opts = S.wallets.map(w=>`<option value="${esc(w.type)}|${esc(w.number)}">${payLabel(w.type)} · ${esc(w.number)}</option>`).join("");
+  const m = document.createElement("div"); m.className = "modal";
+  m.innerHTML = `<div class="sheet"><div class="flex"><h2 class="sp" style="font-size:20px">Sell balance</h2><button id="sl_x" style="font-size:28px;padding:0 8px" aria-label="Close">×</button></div>
+  <div class="tile" style="margin-top:12px"><div class="sub">Available balance</div><div class="big">${fmt(S.profile.balance)} BDT</div></div>
+  ${opts ? `<select id="sl_w"><option value="">Choose from my wallets...</option>${opts}</select>` : ""}
+  <select id="sl_m"><option value="bkash">bKash</option><option value="nagad">Nagad</option></select>
+  <input id="sl_n" type="tel" inputmode="numeric" placeholder="Receive number (01XXXXXXXXX)">
+  <input id="sl_a" type="number" inputmode="decimal" min="${MIN_SELL}" placeholder="Amount (min ${MIN_SELL} BDT)">
+  <div class="err" id="sl_e"></div>
+  <button class="btn" style="margin-top:14px" id="sl_ok">Sell now</button>
+  <p class="sub" style="margin-top:8px;font-size:13px">The amount is cut from your balance right away and the request goes to Processing. Admin will send the money to your wallet.</p></div>`;
+  document.body.append(m);
+  $("#sl_x").onclick = () => m.remove();
+  if($("#sl_w")) $("#sl_w").onchange = e => { const v = e.target.value; if(!v) return; const [t,n] = v.split("|"); $("#sl_m").value = t; $("#sl_n").value = n; };
+  $("#sl_ok").onclick = async () => {
+    const method = $("#sl_m").value, number = $("#sl_n").value.trim(), amt = Math.round((Number($("#sl_a").value)||0)*100)/100, err = $("#sl_e");
+    if(!/^01\d{9}$/.test(number)){ err.textContent = "Enter an 11-digit number starting with 01."; return; }
+    if(!(amt >= MIN_SELL)){ err.textContent = "Minimum amount is "+MIN_SELL+" BDT."; return; }
+    if(amt > Number(S.profile.balance||0)){ err.textContent = "Not enough balance."; return; }
+    if(S.selling) return;
+    if(!confirm("Sell "+fmt(amt)+" BDT to "+payLabel(method)+" "+number+"?\n\nThe amount will be cut from your balance now.")) return;
+    S.selling = true; $("#sl_ok").disabled = true;
+    try{
+      if(DEMO){
+        S.profile.balance = Number(S.profile.balance||0) - amt;
+        S.sellOrders.unshift({id:String(Date.now()),amount:amt,method,number,status:"processing",createdMs:Date.now(),history:[{status:"processing",by:"user",at:Date.now(),note:"Sell requested"}]});
+      } else {
+        const uid = S.user.uid;
+        await fb.runTransaction(db, async t=>{
+          const uRef = fb.doc(db,"users",uid), us = await t.get(uRef);
+          if(!us.exists()) throw new Error("Profile not found");
+          const cur = Number(us.data().balance||0);
+          if(amt > cur) throw new Error("Not enough balance");
+          const nb = Math.round((cur-amt)*100)/100, sRef = fb.doc(fb.collection(db,"sellOrders"));
+          t.update(uRef,{balance:nb,lastSellId:sRef.id});
+          t.set(sRef,{userId:uid,amount:amt,method,number,status:"processing",createdAt:fb.serverTimestamp(),history:[{status:"processing",by:"user",uid,at:Date.now(),note:"Sell requested"}]});
+          t.set(fb.doc(fb.collection(db,"users",uid,"ledger")),{kind:"withdraw",direction:"debit",amount:amt,orderId:sRef.id,balanceAfter:nb,createdAt:fb.serverTimestamp()});
+        });
+      }
+      m.remove(); S.view = "orders"; S.hTop = "sell"; S.sTab = "all"; render(); scrollTo(0,0); toast("Sell request sent. Status: Processing");
+    }catch(e){
+      console.error(e);
+      err.textContent = e.message==="Not enough balance" ? "Not enough balance." : "Could not sell ("+(e.code||e.message)+")";
+      $("#sl_ok").disabled = false;
+    }
+    S.selling = false;
+  };
 }
 
 function sheetView(){
@@ -370,7 +445,7 @@ function render(force){
   const app = $("#app");
   if(!S.user){ app.innerHTML = authView(); return; }
   if(isOut()){ S.sheet = null; app.innerHTML = blockedView(); return; }
-  app.innerHTML = noticeBar() + (S.view === "team" ? teamView() : S.view === "orders" ? ordersView() : S.view === "odetail" ? orderDetailView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav() + (S.sheet ? sheetView() : "");
+  app.innerHTML = noticeBar() + (S.view === "team" ? teamView() : S.view === "orders" ? ordersView() : S.view === "odetail" ? orderDetailView() : S.view === "sdetail" ? sellDetailView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav() + (S.sheet ? sheetView() : "");
 }
 
 /* ---------- Data (Firestore) ---------- */
@@ -394,6 +469,7 @@ function subscribe(uid){
     onS(collection(db,"users",uid,"wallets"), s=>{ S.wallets = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
     onS(query(collection(db,"buyOrders"),where("status","in",["open","reserved"])), s=>{ S.orders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt)}; }); render(); }),
     onS(query(collection(db,"buyOrders"),where("claimedBy","==",uid)), s=>{ S.myOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt),submittedMs:ms(x.submittedAt),reviewedMs:ms(x.reviewedAt)}; }); render(); }),
+    onS(query(collection(db,"sellOrders"),where("userId","==",uid)), s=>{ S.sellOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,createdMs:ms(x.createdAt)||(x.history&&x.history[0]&&x.history[0].at)||0}; }); render(); }),
     onS(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); }),
     onS(query(collection(db,"users",uid,"ledger"),orderBy("createdAt","desc"),limit(100)), s=>{
       S.ledger = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,when:(x.createdAt?.toDate?.()||new Date()).toLocaleString()}; }); render(); }),
@@ -591,7 +667,7 @@ document.addEventListener("click", async e=>{
   const t=e.target.closest("button,a"); if(!t) return;
   const d=t.dataset;
   if("tab" in d){ S.tab=d.tab; S.view=null; render(); scrollTo(0,0); }
-  else if("back" in d){ S.view = S.view==="odetail" ? "orders" : null; render(); }
+  else if("back" in d){ S.view = (S.view==="odetail" || S.view==="sdetail") ? "orders" : null; render(); }
   else if("cur" in d){ S.cur=d.cur; render(); }
   else if("range" in d){ S.range=+d.range; render(); }
   else if("htab" in d){ S.hTab=d.htab; render(); }
@@ -611,6 +687,10 @@ document.addEventListener("click", async e=>{
   else if("copylink" in d){ try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } }
   else if("sharelink" in d){ if(navigator.share){ try{ await navigator.share({title:"Join me on Nerivo", url:refLink()}); }catch{} } else { try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } } }
   else if("copy" in d){ try{ await navigator.clipboard.writeText(S.profile.code||""); toast("Code copied"); }catch{ toast(S.profile.code||""); } }
+  else if("go" in d && d.go==="collections"){ S.view="orders"; S.hTop="sell"; S.sTab="all"; render(); scrollTo(0,0); }
+  else if("osdetail" in d){ S.detailSid=d.osdetail; S.view="sdetail"; render(); scrollTo(0,0); }
+  else if("stab" in d){ S.sTab=d.stab; render(); }
+  else if("sellbal" in d) sellSheet();
   else if("go" in d){ const v = d.go==="purchases" ? "orders" : d.go; if(["balance","orders","team"].includes(v)){ S.view=v; if(v==="orders"){ S.hTab="all"; S.hTop="buy"; } render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
   else if("mode" in d){ S.authMode=S.authMode==="login"?"register":"login"; S.err=""; S.refOk=undefined; S.refMsg=""; render(); }
   else if("auth" in d) doAuth();
@@ -636,7 +716,7 @@ if(!DEMO){
     }catch(e){ showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); return; }
     fb.onAuthStateChanged(auth,u=>{
       if(u && !/@nerivo\.local$/i.test(u.email||"")){ fb.signOut(auth); return; }   /* not a user-panel account (e.g. an old admin session): sign out */
-      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sheet=null;
+      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sellOrders=[]; S.sheet=null;
       render();
       if(u) subscribe(u.uid);
     });
