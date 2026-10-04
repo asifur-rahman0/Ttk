@@ -148,7 +148,7 @@ const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
 const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
+const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], recvOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
 S.authForm.ref = REF;
@@ -242,6 +242,34 @@ const supUrl = (type, raw) => {
   if (type === "whatsapp" && /^\+?\d{8,15}$/.test(raw)) return "https://wa.me/" + raw.replace(/\D/g, "");
   return "";
 };
+/* Copy to clipboard. Tries the old textarea method first (works on http pages and iOS, must run right inside the tap),
+   then the modern API. Resolves true if copied. */
+function copyText(text){
+  text = String(text ?? "");
+  const prev = document.activeElement;
+  let ok = false;
+  try {
+    const ios = /ipad|iphone|ipod/i.test(navigator.userAgent || "");
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("aria-hidden", "true");
+    if (!ios) ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;left:0;top:0;width:2em;height:2em;padding:0;border:0;outline:0;box-shadow:none;background:transparent;opacity:.01;font-size:16px";
+    document.body.appendChild(ta);
+    if (ios) {
+      ta.contentEditable = "true"; ta.readOnly = false;
+      const r = document.createRange(); r.selectNodeContents(ta);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      ta.setSelectionRange(0, 999999);
+    } else { ta.focus(); ta.select(); ta.setSelectionRange(0, text.length); }
+    ok = document.execCommand("copy");
+    ta.remove();
+    try { if (prev && prev.focus) prev.focus(); } catch {}
+  } catch {}
+  // also write through the modern clipboard API when the page allows it (https), so Gboard/clipboard managers see it
+  try { if (navigator.clipboard && window.isSecureContext) { const pr = navigator.clipboard.writeText(text); if (ok) { pr.catch(()=>{}); return Promise.resolve(true); } return pr.then(() => true, () => false); } } catch {}
+  return Promise.resolve(ok);
+}
+const copyOrShow = async (text, okMsg) => { if (await copyText(text)) toast(okMsg); else { toast("Could not copy automatically"); try { window.prompt("Copy this:", text); } catch {} } };
 window.rcIn = v => { S.rcInput = v; };
 function redeemView(){
   const rows = [...S.redeems].sort((a,b)=>(b.ms||0)-(a.ms||0));
@@ -308,6 +336,19 @@ function playTut(i){
   const close = () => m.remove();
   $("#tv_x").onclick = close; m.addEventListener("click", e => { if(e.target === m) close(); });
 }
+async function confirmRecv(id, val){
+  if(DEMO) return toast("Demo mode");
+  if(!confirm(val==="received" ? "Confirm: you RECEIVED this payment?" : "Confirm: you did NOT receive this payment?")) return;
+  try{ await fb.updateDoc(fb.doc(db,"buyOrders",id),{receiverStatus:val,receiverAt:fb.serverTimestamp()}); toast("Thanks, your answer was sent to admin"); }
+  catch(e){ console.error(e); toast("Could not send ("+(e.code||"error")+")"); }
+}
+const recvPanel = () => {
+  const list = S.recvOrders.filter(o=>o.trxId && !o.receiverStatus && ["pending","created"].includes(NS(o.status)));
+  if(!list.length) return "";
+  return `<div class="panel" style="border-color:#f3d089"><h2>Payment confirmation</h2><div class="sub">Someone says they sent money to your wallet. Check your ${"bKash/Nagad"} app, then answer honestly.</div>
+  ${list.map(o=>{ const to = o.payMethod==="nagad" ? o.nagadNumber : o.bkashNumber; return `<div class="tile" style="margin-top:10px"><div style="font-weight:700">${fmt(o.amount)} BDT · ${payLabel(o.payMethod)}</div><div class="sub">To your number: ${esc(to||"-")}<br>From: ${esc(o.senderNumber||"-")}<br>TrxID: <b>${esc(o.trxId)}</b></div>
+  <div class="flex" style="margin-top:10px"><button class="btn sm" data-recv="${esc(o.id)}|received" style="flex:1">Received</button><button class="btn sm out" data-recv="${esc(o.id)}|not_received" style="flex:1">Not received</button></div></div>`; }).join("")}</div>`;
+};
 function home(){
   const p = todayProfile();
   return head("Home") + `
@@ -317,6 +358,7 @@ function home(){
     <div style="margin-top:8px;opacity:.92">Wallet online. Rewards calculated daily.</div>
     <div class="flex" style="margin-top:20px;background:rgba(255,255,255,.18);border-radius:18px;padding:12px 14px">${IC.award}<span class="sp" style="font-weight:600">Today's income</span><b style="font-family:var(--display);font-size:16px">${fmt(p.income)} BDT</b></div>
   </div>
+  ${recvPanel()}
   <div class="panel"><h2>Today's trading</h2>
     <div class="grid2"><div class="tile"><div class="sub">Sale amount</div><div class="big">${fmt(p.saleAmount)} BDT</div><div class="sub">Sale orders ${p.saleOrders||0}</div></div>
     <div class="tile"><div class="sub">Purchase amount</div><div class="big">${fmt(p.purchaseAmount)} BDT</div><div class="sub">Purchase orders ${p.purchaseOrders||0}</div></div></div></div>
@@ -467,7 +509,9 @@ function sheetView(){
   else body = `<div class="tile" style="margin-top:12px;background:var(--mint);color:var(--g)">✅ Order created with ${ml}. It is locked for you only.</div>
     <div class="tile" style="margin-top:12px"><div class="sub">Send exactly ${fmt(o.amount)} BDT to this ${ml} number</div>
       <div class="flex"><b class="sp" style="font-size:19px;letter-spacing:1px">${esc(num)}</b><button class="btn sm out" data-copynum="${esc(num)}">Copy</button></div></div>
-    <input id="ps" type="tel" inputmode="numeric" placeholder="Your ${ml} number (sent from)" value="${esc(sh.sender)}">
+    ${(()=>{ const own = S.wallets.filter(w=>w.type===m); return own.length
+      ? `<select id="ps"><option value="">Choose your ${ml} number (sent from)</option>${own.map(w=>`<option value="${esc(w.number)}" ${w.number===sh.sender?"selected":""}>${esc(w.number)}</option>`).join("")}</select>`
+      : `<div class="tile" style="margin-top:12px;background:#fff3d6;color:#8a5a00">Add your own ${ml} wallet first (Sell tab). Payments are only accepted from your own wallet numbers.</div><input id="ps" type="hidden" value="">`; })()}
     <input id="pt" placeholder="Transaction ID" autocapitalize="characters" value="${esc(sh.trx)}">
     <button class="btn" style="margin-top:14px" data-submitpay>Submit payment</button>
     <p class="sub" style="margin-top:8px;font-size:11px">Admin will update your order status (Success / Failed / Lock) after checking.</p>
@@ -532,6 +576,7 @@ function subscribe(uid){
     onS(query(collection(db,"buyOrders"),where("status","in",["open","reserved"])), s=>{ S.orders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt)}; }); render(); }),
     onS(query(collection(db,"buyOrders"),where("claimedBy","==",uid)), s=>{ S.myOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt),submittedMs:ms(x.submittedAt),reviewedMs:ms(x.reviewedAt)}; }); render(); }),
     onS(query(collection(db,"sellOrders"),where("userId","==",uid)), s=>{ S.sellOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,createdMs:ms(x.createdAt)||(x.history&&x.history[0]&&x.history[0].at)||0}; }); render(); }),
+    onS(query(collection(db,"buyOrders"),where("receiverId","==",uid)), s=>{ S.recvOrders = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
     onS(collection(db,"users",uid,"redeems"), s=>{ S.redeems = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,ms:ms(x.createdAt)||Date.now()}; }); render(); }),
     onS(doc(db,"settings","support"), s=>{ S.sup = (s.exists() && Array.isArray(s.data().list)) ? s.data().list : []; render(); }),
     onS(doc(db,"settings","tutorials"), s=>{ S.tuts = (s.exists() && Array.isArray(s.data().list)) ? s.data().list : []; render(); }),
@@ -690,17 +735,23 @@ async function submitPay(){
   const sh = S.sheet;
   const sender = ($("#ps")?.value||"").trim(), trx = ($("#pt")?.value||"").trim().toUpperCase();
   sh.sender = sender; sh.trx = trx;
-  if(!/^01\d{9}$/.test(sender)) return toast("Enter your 11-digit number (01XXXXXXXXX)");
+  if(!/^01\d{9}$/.test(sender)) return toast("Choose the number you sent the money from");
+  if(!DEMO && !S.wallets.some(w=>w.type===sh.method && w.number===sender)) return toast("The sender number must be one of your own saved wallets");
   if(!/^[A-Z0-9]{6,20}$/.test(trx)) return toast("Enter a valid Transaction ID (6-20 letters or numbers)");
   if(S.claiming) return;
   S.claiming = true;
   try{
     if(DEMO){ const x = S.myOrders.find(y=>y.id===sh.id); if(x) Object.assign(x,{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx}); }
-    else await fb.updateDoc(fb.doc(db,"buyOrders",sh.id),{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx,submittedAt:fb.serverTimestamp(),history:hist("pending","Payment proof submitted ("+trx+")")});
+    else await fb.runTransaction(db, async t=>{
+      const tRef = fb.doc(db,"usedTrx",trx), ts = await t.get(tRef);
+      if(ts.exists()) throw new Error("trx-used");
+      t.set(tRef,{orderId:sh.id,uid:S.user.uid,createdAt:fb.serverTimestamp()});
+      t.update(fb.doc(db,"buyOrders",sh.id),{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx,submittedAt:fb.serverTimestamp(),history:hist("pending","Payment proof submitted ("+trx+")")});
+    });
     S.sheet = null; S.view = "orders"; S.hTop = "buy"; S.hTab = "pending"; toast("Submitted. Your order is Pending until admin checks it");
   }catch(e){
     console.error(e);
-    toast("Could not submit payment ("+(e.code||"error")+")");
+    toast(e.message==="trx-used" ? "This Transaction ID was already used. Enter your real ID." : "Could not submit payment ("+(e.code||"error")+")");
     showErr("Submit failed: "+(e.code||"")+" "+e.message);
   }
   S.claiming = false; render(true);
@@ -746,18 +797,19 @@ document.addEventListener("click", async e=>{
   else if("method" in d) pickMethod(d.method);
   else if("closesheet" in d){ S.sheet=null; render(true); }
   else if("submitpay" in d) submitPay();
-  else if("copynum" in d){ try{ await navigator.clipboard.writeText(d.copynum); toast("Number copied"); }catch{ toast(d.copynum); } }
+  else if("copynum" in d) copyOrShow(d.copynum, "Number copied");
   else if("toggle" in d) toggleWallet(d.toggle);
   else if("sync" in d) toast("Balance refreshed");
   else if("add" in d) addWalletSheet();
-  else if("copylink" in d){ try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } }
-  else if("sharelink" in d){ if(navigator.share){ try{ await navigator.share({title:"Join me on Nova Pay", url:refLink()}); }catch{} } else { try{ await navigator.clipboard.writeText(refLink()); toast("Referral link copied"); }catch{ toast(refLink()); } } }
-  else if("copy" in d){ try{ await navigator.clipboard.writeText(S.profile.code||""); toast("Code copied"); }catch{ toast(S.profile.code||""); } }
+  else if("copylink" in d) copyOrShow(refLink(), "Referral link copied");
+  else if("sharelink" in d){ if(navigator.share){ try{ await navigator.share({title:"Join me on Nova Pay", url:refLink()}); }catch{} } else copyOrShow(refLink(), "Referral link copied"); }
+  else if("copy" in d) copyOrShow(S.profile.code||"", "Code copied");
   else if("go" in d && d.go==="support") openSupport();
   else if("go" in d && d.go==="redeem"){ S.view="redeem"; render(); scrollTo(0,0); }
   else if("redeem" in d) doRedeem();
   else if("go" in d && d.go==="collections"){ S.view="orders"; S.hTop="sell"; S.sTab="all"; render(); scrollTo(0,0); }
   else if("tut" in d) playTut(Number(d.tut));
+  else if("recv" in d){ const [id,v] = d.recv.split("|"); confirmRecv(id, v); }
   else if("osdetail" in d){ S.detailSid=d.osdetail; S.view="sdetail"; render(); scrollTo(0,0); }
   else if("stab" in d){ S.sTab=d.stab; render(); }
   else if("go" in d){ const v = d.go==="purchases" ? "orders" : d.go; if(["balance","orders","team"].includes(v)){ S.view=v; if(v==="orders"){ S.hTab="all"; S.hTop="buy"; } render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
@@ -785,7 +837,7 @@ if(!DEMO){
     }catch(e){ showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); return; }
     fb.onAuthStateChanged(auth,u=>{
       if(u && !/@nerivo\.local$/i.test(u.email||"")){ fb.signOut(auth); return; }   /* not a user-panel account (e.g. an old admin session): sign out */
-      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sellOrders=[]; S.redeems=[]; S.rcInput=""; S.sheet=null;
+      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.recvOrders=[]; S.sellOrders=[]; S.redeems=[]; S.rcInput=""; S.sheet=null;
       render();
       if(u) subscribe(u.uid);
     });
