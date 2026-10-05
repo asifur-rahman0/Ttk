@@ -53,6 +53,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .seg{display:flex;gap:4px;margin-top:13px;background:rgba(19,131,230,.1);border-radius:18px;padding:4px}
 .seg button{flex:1;border-radius:14px;padding:10px;color:var(--mute);font-size:13px;font-weight:700}
 .seg button.act{background:#fff;color:var(--g);box-shadow:0 5px 11px -6px rgba(19,131,230,.8)}
+.seg button .wlogo{width:26px;height:26px;border-radius:8px;font-size:0;vertical-align:middle;margin-right:6px;display:inline-grid}
 .ranges{display:flex;gap:6px;overflow-x:auto;padding:13px 13px 4px;margin:0 -13px;scrollbar-width:none}
 .ranges button{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:8px 13px;white-space:nowrap;font-size:12px;font-weight:600;color:var(--mute)}
 .ranges button.act{background:var(--gd);color:#fff;border-color:var(--gd)}
@@ -148,7 +149,7 @@ const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
 const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], recvOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
+const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
 S.authForm.ref = REF;
@@ -195,7 +196,10 @@ const IC = {
   power:svg('<path d="M12 3v9M6.400 6.500a8 8 0 1 0 11.200 0"/>'),
   head:svg('<path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v5H5a1 1 0 0 1-1-1zM20 14h-3v5h2a1 1 0 0 0 1-1z"/>')
 };
-const logo = t => t==="both" ? `<div class="logo" style="background:var(--g)">৳</div>` : `<div class="logo ${t==="bkash"?"bk":"ng"}">${t==="bkash"?"bK":"ন"}</div>`;
+/* Wallet logos: put your own logo files next to index.html as bkash.png and nagad.png (square, any size).
+   If a file is missing the coloured badge below is shown instead. */
+const brandImg = t => `<img src="${t==="bkash"?"bkash.png":"nagad.png"}" alt="" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff;padding:4px">`;
+const logo = t => t==="both" ? `<div class="logo" style="background:var(--g)">৳</div>` : `<div class="logo ${t==="bkash"?"bk":"ng"}" style="position:relative;overflow:hidden">${t==="bkash"?"bK":"ন"}${brandImg(t)}</div>`;
 const typeLabel = t => t==="both" ? "bKash / Nagad" : t;
 const ms = ts => ts?.toMillis?.() || 0;
 /* Order status: open -> created (user claimed + picked wallet) -> success / failed / lock (admin decides). Old names are mapped. */
@@ -225,7 +229,7 @@ function blockedView(){
   return `<div class="auth"><h1>Nova Pay</h1><div class="card" style="margin-top:20px;background:#fdecea;border-color:#f3c0b8"><div style="font-size:16px;font-weight:700;color:#c0392b">${t}</div><p class="sub" style="margin-top:8px;font-size:12px">${m}</p>${S.profile.accountNote ? `<p style="margin-top:10px;font-size:12px"><b>Note:</b> ${esc(S.profile.accountNote)}</p>` : ""}</div><button class="btn out" style="margin-top:20px" data-logout>Log out</button></div>`;
 }
 
-const head = title => `<header><button class="ib" data-go="support" aria-label="Live support">${IC.head}</button><h1>${title}<small>v88</small></h1><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button></header>`;
+const head = title => `<header><button class="ib" data-go="support" aria-label="Live support">${IC.head}</button><h1>${navIdx>0 ? `<button class="ib" style="width:30px;height:30px;display:inline-grid;vertical-align:middle;margin-right:8px;box-shadow:none" data-back aria-label="Back">${CHEV}</button>` : ""}${title}</h1><button class="chip" data-copy>${S.profile.code||"------"} ⧉</button></header>`;
 
 /* ---------- Screens ---------- */
 const supIcon = (type, size) => {
@@ -336,19 +340,6 @@ function playTut(i){
   const close = () => m.remove();
   $("#tv_x").onclick = close; m.addEventListener("click", e => { if(e.target === m) close(); });
 }
-async function confirmRecv(id, val){
-  if(DEMO) return toast("Demo mode");
-  if(!confirm(val==="received" ? "Confirm: you RECEIVED this payment?" : "Confirm: you did NOT receive this payment?")) return;
-  try{ await fb.updateDoc(fb.doc(db,"buyOrders",id),{receiverStatus:val,receiverAt:fb.serverTimestamp()}); toast("Thanks, your answer was sent to admin"); }
-  catch(e){ console.error(e); toast("Could not send ("+(e.code||"error")+")"); }
-}
-const recvPanel = () => {
-  const list = S.recvOrders.filter(o=>o.trxId && !o.receiverStatus && ["pending","created"].includes(NS(o.status)));
-  if(!list.length) return "";
-  return `<div class="panel" style="border-color:#f3d089"><h2>Payment confirmation</h2><div class="sub">Someone says they sent money to your wallet. Check your ${"bKash/Nagad"} app, then answer honestly.</div>
-  ${list.map(o=>{ const to = o.payMethod==="nagad" ? o.nagadNumber : o.bkashNumber; return `<div class="tile" style="margin-top:10px"><div style="font-weight:700">${fmt(o.amount)} BDT · ${payLabel(o.payMethod)}</div><div class="sub">To your number: ${esc(to||"-")}<br>From: ${esc(o.senderNumber||"-")}<br>TrxID: <b>${esc(o.trxId)}</b></div>
-  <div class="flex" style="margin-top:10px"><button class="btn sm" data-recv="${esc(o.id)}|received" style="flex:1">Received</button><button class="btn sm out" data-recv="${esc(o.id)}|not_received" style="flex:1">Not received</button></div></div>`; }).join("")}</div>`;
-};
 function home(){
   const p = todayProfile();
   return head("Home") + `
@@ -358,7 +349,6 @@ function home(){
     <div style="margin-top:8px;opacity:.92">Wallet online. Rewards calculated daily.</div>
     <div class="flex" style="margin-top:20px;background:rgba(255,255,255,.18);border-radius:18px;padding:12px 14px">${IC.award}<span class="sp" style="font-weight:600">Today's income</span><b style="font-family:var(--display);font-size:16px">${fmt(p.income)} BDT</b></div>
   </div>
-  ${recvPanel()}
   <div class="panel"><h2>Today's trading</h2>
     <div class="grid2"><div class="tile"><div class="sub">Sale amount</div><div class="big">${fmt(p.saleAmount)} BDT</div><div class="sub">Sale orders ${p.saleOrders||0}</div></div>
     <div class="tile"><div class="sub">Purchase amount</div><div class="big">${fmt(p.purchaseAmount)} BDT</div><div class="sub">Purchase orders ${p.purchaseOrders||0}</div></div></div></div>
@@ -388,7 +378,7 @@ function sell(){
   return head("Sell") + `
   <div class="hero"><div class="flex"><div class="sp"><h2 style="font-size:21px">Wallet Services</h2><div class="sub" style="font-size:13px">Manage connected wallets.</div></div><button class="flex" style="color:var(--g)" data-go="collections">${IC.wallet} Sell Records</button></div>
     <span class="pill">${S.wallets.length} connected</span><span class="pill">${on} online</span></div>
-  ${S.wallets.length ? S.wallets.map(w=>`<div class="card ${w.online?"on":"off"}"><div class="flex">${logo(w.type)}<div class="sp"><div style="font-size:21px;font-weight:600">${w.type}</div><div class="sub" style="font-size:15px">${w.number}</div></div>
+  ${S.wallets.length ? S.wallets.map(w=>`<div class="card ${w.online?"on":"off"}"><div class="flex">${logo(w.type)}<div class="sp"><div style="font-size:21px;font-weight:600">${payLabel(w.type)}</div><div class="sub" style="font-size:15px">${w.number}</div></div>
     <span class="tag">${w.online?"Online":"Offline"}</span><button style="color:var(--g)" data-sync="${w.id}">${IC.sync}</button></div>
     <div class="flex" style="margin-top:14px;padding-bottom:14px;border-bottom:1px solid var(--line)"><div class="big sp" style="font-size:24px">${fmt(w.balance)} BDT</div>
     <button class="btn sm ${w.online?"out":""}" style="min-width:118px;padding:18px" data-toggle="${w.id}">${w.online?"Go offline":"Start collection"}</button></div>
@@ -434,7 +424,7 @@ const CHIPS = [["all","All"],["created","Created"],["pending","Pending"],["succe
 const p2 = n => String(n).padStart(2,"0");
 const fmtT = t => { if(!t) return ""; const d = new Date(t); return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())+" "+p2(d.getHours())+":"+p2(d.getMinutes())+":"+p2(d.getSeconds()); };
 const pill = st => { const [t,c,bg] = ST[st] || [st,"#555","#eee"]; return `<span class="opill" style="color:${c};background:${bg}">${esc(t)}</span>`; };
-const wlogo = m => m==="bkash" ? `<span class="wlogo bk">bKash</span>` : m==="nagad" ? `<span class="wlogo ng">নগদ</span>` : `<span class="wlogo" style="background:#8aa4bb">BDT</span>`;
+const wlogo = m => m==="bkash" ? `<span class="wlogo bk" style="position:relative;overflow:hidden">bKash${brandImg("bkash")}</span>` : m==="nagad" ? `<span class="wlogo ng" style="position:relative;overflow:hidden">নগদ${brandImg("nagad")}</span>` : `<span class="wlogo" style="background:#8aa4bb">BDT</span>`;
 const CHEV = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>`;
 const REFRESH = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14-4M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 4M20 20v-4h-4"/></svg>`;
 
@@ -509,9 +499,7 @@ function sheetView(){
   else body = `<div class="tile" style="margin-top:12px;background:var(--mint);color:var(--g)">✅ Order created with ${ml}. It is locked for you only.</div>
     <div class="tile" style="margin-top:12px"><div class="sub">Send exactly ${fmt(o.amount)} BDT to this ${ml} number</div>
       <div class="flex"><b class="sp" style="font-size:19px;letter-spacing:1px">${esc(num)}</b><button class="btn sm out" data-copynum="${esc(num)}">Copy</button></div></div>
-    ${(()=>{ const own = S.wallets.filter(w=>w.type===m); return own.length
-      ? `<select id="ps"><option value="">Choose your ${ml} number (sent from)</option>${own.map(w=>`<option value="${esc(w.number)}" ${w.number===sh.sender?"selected":""}>${esc(w.number)}</option>`).join("")}</select>`
-      : `<div class="tile" style="margin-top:12px;background:#fff3d6;color:#8a5a00">Add your own ${ml} wallet first (Sell tab). Payments are only accepted from your own wallet numbers.</div><input id="ps" type="hidden" value="">`; })()}
+    <input id="ps" type="tel" inputmode="numeric" placeholder="Your ${ml} number (sent from)" value="${esc(sh.sender)}">
     <input id="pt" placeholder="Transaction ID" autocapitalize="characters" value="${esc(sh.trx)}">
     <button class="btn" style="margin-top:14px" data-submitpay>Submit payment</button>
     <p class="sub" style="margin-top:8px;font-size:11px">Admin will update your order status (Success / Failed / Lock) after checking.</p>
@@ -546,12 +534,41 @@ function nav(){
   return `<nav>${b("home","Home")}${b("buy","Buy")}<button class="gift" data-go="redeem" aria-label="Redeem code">🎁</button>${b("sell","Sell")}${b("mine","Mine")}</nav>`;
 }
 
+const navSnap = () => ({ t:S.tab, v:S.view||null, d:S.detailId||null, s:S.detailSid||null, sh:S.sheet ? (S.sheet.id||1) : null });
+function navApply(nv){ S.tab = nv.t; S.view = nv.v; S.detailId = nv.d; S.detailSid = nv.s; if (!nv.sh) S.sheet = null; render(true); }
+/* ---- back support: phone back button / browser back / on-screen back ---- */
+let navIdx = 0, navLast = null, navRestoring = false, navIgnore = 0;
+function navSync(){
+  if (navRestoring) return;
+  try {
+    const snap = navSnap(), key = JSON.stringify(snap);
+    if (navLast === null) { history.replaceState({ nv:snap, i:0 }, ""); navLast = key; navIdx = 0; return; }
+    if (key !== navLast) { history.pushState({ nv:snap, i:++navIdx }, ""); navLast = key; }
+  } catch {}
+}
+try {
+  new MutationObserver(muts => muts.forEach(mu => {
+    mu.addedNodes.forEach(n => { if (n.classList && n.classList.contains("modal")) { n._h = true; try { history.pushState({ m:1, i:navIdx }, ""); } catch {} } });
+    mu.removedNodes.forEach(n => { if (n.classList && n.classList.contains("modal") && n._h && !n._pop) { navIgnore++; try { history.back(); } catch { navIgnore--; } } });
+  })).observe(document.body, { childList:true });
+} catch {}
+window.addEventListener("popstate", e => {
+  if (navIgnore > 0) { navIgnore--; return; }
+  const top = [...document.querySelectorAll(".modal")].pop();
+  if (top) { top._pop = true; top.remove(); return; }
+  const st = e.state; if (!st || !st.nv) return;
+  navRestoring = true; navIdx = st.i || 0;
+  navApply(st.nv);
+  navRestoring = false;
+  navLast = JSON.stringify(navSnap());
+});
 function render(force){
   if(S.sheet && force!==true && !isOut()) return;
   const app = $("#app");
   if(!S.user){ app.innerHTML = authView(); return; }
   if(isOut()){ S.sheet = null; app.innerHTML = blockedView(); return; }
   app.innerHTML = noticeBar() + (S.view === "team" ? teamView() : S.view === "orders" ? ordersView() : S.view === "odetail" ? orderDetailView() : S.view === "sdetail" ? sellDetailView() : S.view === "redeem" ? redeemView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav() + (S.sheet ? sheetView() : "");
+  navSync();
 }
 
 /* ---------- Data (Firestore) ---------- */
@@ -576,7 +593,6 @@ function subscribe(uid){
     onS(query(collection(db,"buyOrders"),where("status","in",["open","reserved"])), s=>{ S.orders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt)}; }); render(); }),
     onS(query(collection(db,"buyOrders"),where("claimedBy","==",uid)), s=>{ S.myOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt),submittedMs:ms(x.submittedAt),reviewedMs:ms(x.reviewedAt)}; }); render(); }),
     onS(query(collection(db,"sellOrders"),where("userId","==",uid)), s=>{ S.sellOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,createdMs:ms(x.createdAt)||(x.history&&x.history[0]&&x.history[0].at)||0}; }); render(); }),
-    onS(query(collection(db,"buyOrders"),where("receiverId","==",uid)), s=>{ S.recvOrders = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
     onS(collection(db,"users",uid,"redeems"), s=>{ S.redeems = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,ms:ms(x.createdAt)||Date.now()}; }); render(); }),
     onS(doc(db,"settings","support"), s=>{ S.sup = (s.exists() && Array.isArray(s.data().list)) ? s.data().list : []; render(); }),
     onS(doc(db,"settings","tutorials"), s=>{ S.tuts = (s.exists() && Array.isArray(s.data().list)) ? s.data().list : []; render(); }),
@@ -673,15 +689,33 @@ async function doAuth(){
 function addWalletSheet(){
   if(restricted()) return toast(ACC_MSG[accStatus()][0]+": this action is disabled");
   const m=document.createElement("div"); m.className="modal";
-  m.innerHTML=`<div class="sheet"><h2>Add Wallet</h2><select id="wt"><option value="bkash">bKash</option><option value="nagad">Nagad</option></select><input id="wn" type="tel" placeholder="Wallet number (01XXXXXXXXX)"><div class="err" id="we"></div><button class="btn" style="margin-top:16px" id="ws">Save wallet</button><button class="btn out" style="margin-top:10px" id="wc">Cancel</button></div>`;
+  m.innerHTML=`<div class="sheet"><h2>Add Wallet</h2>
+  <div class="seg" style="margin-top:12px"><button id="wt_bkash" class="act" type="button">${wlogo("bkash")} bKash</button><button id="wt_nagad" type="button">${wlogo("nagad")} Nagad</button></div>
+  <input id="wn" type="tel" inputmode="numeric" placeholder="Wallet number (01XXXXXXXXX)"><div class="sub" style="margin-top:8px">You can add as many wallets as you want. The same number can be added once as bKash and once as Nagad. Different numbers are allowed. After saving, only admin can remove a wallet. A number can be linked to one account only.</div><div class="err" id="we"></div><button class="btn" style="margin-top:16px" id="ws">Save wallet</button><button class="btn out" style="margin-top:10px" id="wc">Cancel</button></div>`;
   document.body.append(m);
+  let type="bkash";
+  const pick=k=>{ type=k; $("#wt_bkash").classList.toggle("act",k==="bkash"); $("#wt_nagad").classList.toggle("act",k==="nagad"); };
+  $("#wt_bkash").onclick=()=>pick("bkash"); $("#wt_nagad").onclick=()=>pick("nagad");
   $("#wc").onclick=()=>m.remove();
   $("#ws").onclick=async()=>{
-    const type=$("#wt").value, number=$("#wn").value.trim();
-    if(!/^01\d{9}$/.test(number)){ $("#we").textContent="Enter an 11-digit number starting with 01."; return; }
-    const w={type,number,balance:0,online:false};
-    if(DEMO) S.wallets.push({id:String(Date.now()),...w});
-    else await fb.addDoc(fb.collection(db,"users",S.user.uid,"wallets"),w);
+    const number=$("#wn").value.trim(), err=$("#we");
+    if(!/^01\d{9}$/.test(number)){ err.textContent="Enter an 11-digit number starting with 01."; return; }
+    if(S.wallets.some(w=>w.type===type && w.number===number)){ err.textContent="This number is already added as "+payLabel(type)+"."; return; }
+    const w={type,number,balance:0,online:false}, wid=type+"_"+number;
+    $("#ws").disabled=true;
+    try{
+      if(DEMO) S.wallets.push({id:wid,...w});
+      else await fb.runTransaction(db, async t=>{
+        const nRef=fb.doc(db,"walletNumbers",wid), ns=await t.get(nRef);
+        if(ns.exists()) throw new Error("bound");
+        t.set(nRef,{uid:S.user.uid,type,number,createdAt:fb.serverTimestamp()});
+        t.set(fb.doc(db,"users",S.user.uid,"wallets",wid),w);
+      });
+    }catch(e){
+      console.error(e);
+      err.textContent = (e.message==="bound" || e.code==="permission-denied") ? "This number is already added as "+payLabel(type)+" (on this or another account)." : "Could not add wallet ("+(e.code||"error")+")";
+      $("#ws").disabled=false; return;
+    }
     m.remove(); render(); toast("Wallet added");
   };
 }
@@ -735,23 +769,17 @@ async function submitPay(){
   const sh = S.sheet;
   const sender = ($("#ps")?.value||"").trim(), trx = ($("#pt")?.value||"").trim().toUpperCase();
   sh.sender = sender; sh.trx = trx;
-  if(!/^01\d{9}$/.test(sender)) return toast("Choose the number you sent the money from");
-  if(!DEMO && !S.wallets.some(w=>w.type===sh.method && w.number===sender)) return toast("The sender number must be one of your own saved wallets");
+  if(!/^01\d{9}$/.test(sender)) return toast("Enter your 11-digit number (01XXXXXXXXX)");
   if(!/^[A-Z0-9]{6,20}$/.test(trx)) return toast("Enter a valid Transaction ID (6-20 letters or numbers)");
   if(S.claiming) return;
   S.claiming = true;
   try{
     if(DEMO){ const x = S.myOrders.find(y=>y.id===sh.id); if(x) Object.assign(x,{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx}); }
-    else await fb.runTransaction(db, async t=>{
-      const tRef = fb.doc(db,"usedTrx",trx), ts = await t.get(tRef);
-      if(ts.exists()) throw new Error("trx-used");
-      t.set(tRef,{orderId:sh.id,uid:S.user.uid,createdAt:fb.serverTimestamp()});
-      t.update(fb.doc(db,"buyOrders",sh.id),{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx,submittedAt:fb.serverTimestamp(),history:hist("pending","Payment proof submitted ("+trx+")")});
-    });
+    else await fb.updateDoc(fb.doc(db,"buyOrders",sh.id),{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx,submittedAt:fb.serverTimestamp(),history:hist("pending","Payment proof submitted ("+trx+")")});
     S.sheet = null; S.view = "orders"; S.hTop = "buy"; S.hTab = "pending"; toast("Submitted. Your order is Pending until admin checks it");
   }catch(e){
     console.error(e);
-    toast(e.message==="trx-used" ? "This Transaction ID was already used. Enter your real ID." : "Could not submit payment ("+(e.code||"error")+")");
+    toast("Could not submit payment ("+(e.code||"error")+")");
     showErr("Submit failed: "+(e.code||"")+" "+e.message);
   }
   S.claiming = false; render(true);
@@ -784,7 +812,7 @@ document.addEventListener("click", async e=>{
   const t=e.target.closest("button,a"); if(!t) return;
   const d=t.dataset;
   if("tab" in d){ S.tab=d.tab; S.view=null; render(); scrollTo(0,0); }
-  else if("back" in d){ S.view = (S.view==="odetail" || S.view==="sdetail") ? "orders" : null; render(); }
+  else if("back" in d){ if(navIdx > 0) history.back(); else { S.view = (S.view==="odetail" || S.view==="sdetail") ? "orders" : null; render(); } }
   else if("cur" in d){ S.cur=d.cur; render(); }
   else if("range" in d){ S.range=+d.range; render(); }
   else if("htab" in d){ S.hTab=d.htab; render(); }
@@ -795,7 +823,7 @@ document.addEventListener("click", async e=>{
   else if("cancel" in d){ if(confirm("Release this order back to the pool? Do this only if you have not sent any money.")) cancelClaim(d.cancel); }
   else if("verifyref" in d) verifyRef();
   else if("method" in d) pickMethod(d.method);
-  else if("closesheet" in d){ S.sheet=null; render(true); }
+  else if("closesheet" in d){ if(navIdx > 0 && navLast && JSON.parse(navLast).sh){ history.back(); } else { S.sheet=null; render(true); } }
   else if("submitpay" in d) submitPay();
   else if("copynum" in d) copyOrShow(d.copynum, "Number copied");
   else if("toggle" in d) toggleWallet(d.toggle);
@@ -809,7 +837,6 @@ document.addEventListener("click", async e=>{
   else if("redeem" in d) doRedeem();
   else if("go" in d && d.go==="collections"){ S.view="orders"; S.hTop="sell"; S.sTab="all"; render(); scrollTo(0,0); }
   else if("tut" in d) playTut(Number(d.tut));
-  else if("recv" in d){ const [id,v] = d.recv.split("|"); confirmRecv(id, v); }
   else if("osdetail" in d){ S.detailSid=d.osdetail; S.view="sdetail"; render(); scrollTo(0,0); }
   else if("stab" in d){ S.sTab=d.stab; render(); }
   else if("go" in d){ const v = d.go==="purchases" ? "orders" : d.go; if(["balance","orders","team"].includes(v)){ S.view=v; if(v==="orders"){ S.hTab="all"; S.hTop="buy"; } render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
@@ -837,7 +864,7 @@ if(!DEMO){
     }catch(e){ showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); return; }
     fb.onAuthStateChanged(auth,u=>{
       if(u && !/@nerivo\.local$/i.test(u.email||"")){ fb.signOut(auth); return; }   /* not a user-panel account (e.g. an old admin session): sign out */
-      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.recvOrders=[]; S.sellOrders=[]; S.redeems=[]; S.rcInput=""; S.sheet=null;
+      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sellOrders=[]; S.redeems=[]; S.rcInput=""; S.sheet=null;
       render();
       if(u) subscribe(u.uid);
     });
