@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nova Pay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Sora:wght@600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta name="color-scheme" content="only light"><meta name="supported-color-schemes" content="light">
 <meta name="theme-color" content="#dff1ff">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
 <style>
-:root{color-scheme:only light;--g:#1383e6;--gd:#0a2f55;--sky:#38b6ff;--teal:#2ea8ff;--mint:#eaf6ff;--mint2:#d5ebff;--line:#d3e5f4;--mute:#6a8399;--ink:#0c2238;--bg:#fff;--shadow:0 10px 24px -11px rgba(19,131,230,.38);--display:"Sora","Segoe UI",system-ui,sans-serif;--body:"Figtree","Segoe UI",Roboto,system-ui,sans-serif}
+:root{color-scheme:only light;--g:#1383e6;--gd:#0a2f55;--sky:#38b6ff;--teal:#2ea8ff;--mint:#eaf6ff;--mint2:#d5ebff;--line:#d3e5f4;--mute:#6a8399;--ink:#0c2238;--bg:#fff;--shadow:0 10px 24px -11px rgba(19,131,230,.38);--display:"Sora","Noto Sans Bengali","Segoe UI",system-ui,sans-serif;--body:"Figtree","Noto Sans Bengali","Segoe UI",Roboto,system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
 body{font-family:var(--body);background:radial-gradient(960px 400px at 50% -96px,#cfe9ff,#eef7ff 55%,#f7fbff);color:var(--ink);display:flex;justify-content:center;min-height:100vh;font-size:14px;line-height:1.4}
 #app{width:100%;max-width:480px;min-height:100vh;position:relative;padding:0 13px 112px;background:linear-gradient(180deg,#dff1ff 0,#f3faff 192px,#fff 416px)}
@@ -149,7 +149,7 @@ const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
 const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
+const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, sbonus:0, bonusBusy:false, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
 S.authForm.ref = REF;
@@ -165,6 +165,9 @@ async function touchIp(uid){
     if(j.ip) await fb.updateDoc(fb.doc(db,"users",uid), { lastIp:j.ip, lastSeenAt:fb.serverTimestamp() });
   }catch(e){ /* non-critical */ }
 }
+/* A claimed order is locked for the user only for this long. If payment details are not submitted in time,
+   the order goes back to the pool. Keep this equal to the 10 minutes in firestore.rules. */
+const CLAIM_MS = 10*60*1000;
 const RANGES = [[100,199],[200,1000],[1000,4000],[4000,10000],[10000,99999]];
 const RLAB = ["100 - 199","200 - 1K","1K - 4K","4K - 10K","10K+"];
 let unsubs = [];
@@ -316,6 +319,196 @@ async function doRedeem(){
   }
   S.redeeming = false; render();
 }
+/* ---------- Language (English / Bangla) ----------
+   English is the base text of the app. When Bangla is active, every visible text is translated right after
+   it is drawn, using the dictionary below. Admin chooses the default language and which languages users can pick
+   (Admin panel > Settings > Language). A user's own choice is saved on their phone. */
+const LANGS = [["en","English"],["bn","বাংলা"]];
+const langName = k => (LANGS.find(l=>l[0]===k)||[])[1] || "English";
+function curLang(){
+  const en = (S.langCfg && Array.isArray(S.langCfg.enabled) && S.langCfg.enabled.length) ? S.langCfg.enabled : ["en","bn"];
+  let u = null, cached = null;
+  try{ u = localStorage.getItem("nova_lang"); cached = localStorage.getItem("nova_lang_def"); }catch{}
+  const def = (S.langCfg && S.langCfg.default) || cached || "en";
+  if(u && LANGS.some(l=>l[0]===u) && en.includes(u)) return u;
+  return en.includes(def) ? def : en[0];
+}
+const BN = {
+  "Home":"হোম","Buy":"কিনুন","Sell":"বিক্রি","Mine":"প্রোফাইল",
+  "Starting...":"শুরু হচ্ছে...","Reload":"রিলোড",
+  "A slow network can take up to a minute. If it stays stuck, reload.":"ধীর নেটওয়ার্কে এক মিনিট পর্যন্ত লাগতে পারে। আটকে থাকলে রিলোড করুন।",
+  "Create your account":"আপনার অ্যাকাউন্ট তৈরি করুন","Log in to continue":"চালিয়ে যেতে লগ ইন করুন",
+  "Demo mode: Firebase is not set up yet. Tap the button to preview.":"ডেমো মোড: Firebase এখনো সেট করা হয়নি। দেখতে বাটনে ট্যাপ করুন।",
+  "Phone number (01XXXXXXXXX)":"ফোন নম্বর (01XXXXXXXXX)","Password (6+ characters)":"পাসওয়ার্ড (৬+ অক্ষর)","Confirm password":"পাসওয়ার্ড নিশ্চিত করুন",
+  "Referral code (optional)":"রেফারেল কোড (ঐচ্ছিক)","Verify":"যাচাই","Checking referral code...":"রেফারেল কোড পরীক্ষা হচ্ছে...",
+  "✅ This referral code is valid.":"✅ এই রেফারেল কোড সঠিক।","❌ This referral code is not valid.":"❌ এই রেফারেল কোড সঠিক নয়।",
+  "Create account":"অ্যাকাউন্ট তৈরি করুন","Log in":"লগ ইন","Have an account?":"অ্যাকাউন্ট আছে?","New here?":"নতুন?",
+  "Enter a valid 11-digit phone number (01XXXXXXXXX).":"সঠিক ১১ সংখ্যার ফোন নম্বর দিন (01XXXXXXXXX)।",
+  "Password must be at least 6 characters.":"পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।","Passwords do not match.":"পাসওয়ার্ড মিলছে না।",
+  "This referral code is not valid. Fix it or clear the box to continue without one.":"এই রেফারেল কোড সঠিক নয়। ঠিক করুন অথবা কোড ছাড়া এগিয়ে যেতে বক্স খালি করুন।",
+  "Wrong phone number or password.":"ফোন নম্বর বা পাসওয়ার্ড ভুল।","This phone number is already registered. Log in instead.":"এই ফোন নম্বর আগেই নিবন্ধিত। লগ ইন করুন।",
+  "Enter a code to verify, or leave it empty.":"যাচাই করতে কোড দিন, অথবা খালি রাখুন।",
+  "Account deleted":"অ্যাকাউন্ট মুছে ফেলা হয়েছে","Account banned":"অ্যাকাউন্ট ব্যান করা হয়েছে","Account suspended":"অ্যাকাউন্ট সাসপেন্ড করা হয়েছে","Balance frozen":"ব্যালেন্স ফ্রিজ করা হয়েছে","Account locked":"অ্যাকাউন্ট লক করা হয়েছে",
+  "This account has been deleted. Contact support if you need help.":"এই অ্যাকাউন্ট মুছে ফেলা হয়েছে। সাহায্যের জন্য সাপোর্টে যোগাযোগ করুন।",
+  "Your account has been banned. Contact support if you think this is a mistake.":"আপনার অ্যাকাউন্ট ব্যান করা হয়েছে। ভুল মনে হলে সাপোর্টে যোগাযোগ করুন।",
+  "Your account is suspended for now. Contact support for details.":"আপনার অ্যাকাউন্ট আপাতত সাসপেন্ড করা হয়েছে। বিস্তারিত জানতে সাপোর্টে যোগাযোগ করুন।",
+  "Your balance is frozen. You can view your data but cannot take new orders.":"আপনার ব্যালেন্স ফ্রিজ করা হয়েছে। আপনি তথ্য দেখতে পারবেন কিন্তু নতুন অর্ডার নিতে পারবেন না।",
+  "Your account is locked. You can view your data but cannot take new orders.":"আপনার অ্যাকাউন্ট লক করা হয়েছে। আপনি তথ্য দেখতে পারবেন কিন্তু নতুন অর্ডার নিতে পারবেন না।",
+  "Note:":"নোট:",
+  "Smart automatic income":"স্মার্ট স্বয়ংক্রিয় আয়","Wallet online. Rewards calculated daily.":"ওয়ালেট অনলাইন। রিওয়ার্ড প্রতিদিন হিসাব করা হয়।",
+  "Today's income":"আজকের আয়","Today's trading":"আজকের লেনদেন","Sale amount":"বিক্রির পরিমাণ","Purchase amount":"ক্রয়ের পরিমাণ",
+  "Rates & Rewards":"রেট ও রিওয়ার্ড","USDT exchange":"USDT এক্সচেঞ্জ","USDT bonus":"USDT বোনাস","Tutorials":"টিউটোরিয়াল","Tutorial":"টিউটোরিয়াল",
+  "Buy Platform Balance":"প্ল্যাটফর্ম ব্যালেন্স কিনুন","Choose amount and wallet.":"পরিমাণ ও ওয়ালেট বেছে নিন।","Purchase records":"ক্রয়ের রেকর্ড",
+  "Reward":"রিওয়ার্ড","Reward rate":"রিওয়ার্ড রেট","Cancellations":"বাতিল","Continue payment":"পেমেন্ট চালিয়ে যান","Claim purchase order":"ক্রয় অর্ডার নিন","Cancel":"বাতিল",
+  "No orders in this range yet. Try another amount.":"এই রেঞ্জে এখনো কোনো অর্ডার নেই। অন্য পরিমাণ চেষ্টা করুন।",
+  "Wallet Services":"ওয়ালেট সার্ভিস","Manage connected wallets.":"যুক্ত ওয়ালেট পরিচালনা করুন।","Sell Records":"বিক্রির রেকর্ড",
+  "Online":"অনলাইন","Offline":"অফলাইন","Go offline":"অফলাইন হোন","Start collection":"কালেকশন শুরু করুন","↙ Collect":"↙ গ্রহণ","↗ Pay":"↗ পেমেন্ট","Today":"আজ",
+  "No wallets yet. Add one to start collecting.":"এখনো কোনো ওয়ালেট নেই। কালেকশন শুরু করতে একটি যোগ করুন।","Add Wallet":"ওয়ালেট যোগ করুন",
+  "Available balance":"উপলব্ধ ব্যালেন্স","Balance Details":"ব্যালেন্সের বিবরণ","My Team":"আমার টিম","Language":"ভাষা","Order History":"অর্ডার হিস্টোরি",
+  "More Payment Options":"আরও পেমেন্ট অপশন","Live Support":"লাইভ সাপোর্ট","Common Questions":"সাধারণ প্রশ্ন","New Rewards":"নতুন রিওয়ার্ড","Log out":"লগ আউট",
+  "Current balance":"বর্তমান ব্যালেন্স","Sell / Withdraw":"বিক্রি / উইথড্র","Withdraw refund":"উইথড্র ফেরত","Task reward (today's earning)":"টাস্ক রিওয়ার্ড (আজকের আয়)",
+  "Order amount (added to balance)":"অর্ডারের পরিমাণ (ব্যালেন্সে যোগ হয়েছে)","Sign up bonus (registration bonus)":"সাইন আপ বোনাস (রেজিস্ট্রেশন বোনাস)",
+  "Balance adjustment":"ব্যালেন্স সমন্বয়","No records yet.":"এখনো কোনো রেকর্ড নেই।",
+  "Your referral code":"আপনার রেফারেল কোড","Link active":"লিংক সক্রিয়","Checking link...":"লিংক পরীক্ষা হচ্ছে...","Copy link":"লিংক কপি করুন","Share":"শেয়ার",
+  "Team members":"টিম সদস্য","No members yet. Share your link to invite people.":"এখনো কোনো সদস্য নেই। মানুষকে আমন্ত্রণ জানাতে আপনার লিংক শেয়ার করুন।",
+  "BDT Buy":"BDT ক্রয়","BDT Sell":"BDT বিক্রি","All":"সব","Created":"তৈরি","Pending":"পেন্ডিং","Success":"সফল","Failed":"ব্যর্থ","Locked":"লকড","Processing":"প্রসেসিং","Released":"রিলিজ",
+  "No Data":"কোনো তথ্য নেই","Details ›":"বিস্তারিত ›",
+  "Order Details":"অর্ডারের বিবরণ","Order ID":"অর্ডার আইডি","Type":"ধরন","Wallet":"ওয়ালেট","Amount":"পরিমাণ","Sent to":"যাকে পাঠানো হয়েছে","Sent from":"যে নম্বর থেকে পাঠানো",
+  "Transaction ID":"ট্রানজ্যাকশন আইডি","Submitted":"জমা দেওয়া হয়েছে","Timeline":"টাইমলাইন","Order not found":"অর্ডার পাওয়া যায়নি","Payment submitted":"পেমেন্ট জমা দেওয়া হয়েছে",
+  "Waiting for admin to check your payment.":"অ্যাডমিন আপনার পেমেন্ট যাচাই করার অপেক্ষায়।","This order is locked by admin.":"এই অর্ডার অ্যাডমিন লক করেছে।",
+  "Send the money and submit the Transaction ID to continue.":"টাকা পাঠিয়ে চালিয়ে যেতে ট্রানজ্যাকশন আইডি জমা দিন।",
+  "Sell Details":"বিক্রির বিবরণ","Receive number":"গ্রহণের নম্বর","Updated":"আপডেট",
+  "Your balance was deducted. Admin is processing your withdrawal.":"আপনার ব্যালেন্স থেকে কাটা হয়েছে। অ্যাডমিন আপনার উইথড্র প্রসেস করছেন।",
+  "The money was sent to your wallet.":"টাকা আপনার ওয়ালেটে পাঠানো হয়েছে।",
+  "Withdrawal failed. The amount was refunded to your balance.":"উইথড্র ব্যর্থ হয়েছে। টাকা আপনার ব্যালেন্সে ফেরত দেওয়া হয়েছে।",
+  "This request is locked by admin. Contact support.":"এই অনুরোধ অ্যাডমিন লক করেছে। সাপোর্টে যোগাযোগ করুন।","Amount refunded to your balance":"টাকা আপনার ব্যালেন্সে ফেরত দেওয়া হয়েছে",
+  "Choose bKash or Nagad. The order is created instantly and locked for you, so no other user can claim it.":"বিকাশ বা নগদ বেছে নিন। অর্ডার সাথে সাথে তৈরি হয়ে আপনার জন্য লক হয়ে যায়, তাই অন্য কেউ নিতে পারবে না।",
+  "Time left:":"বাকি সময়:",". If you leave this page without submitting payment details, the order is released for everyone.":"। পেমেন্টের তথ্য জমা না দিয়ে এই পেজ ছেড়ে গেলে অর্ডার সবার জন্য ছেড়ে দেওয়া হবে।",
+  "Copy":"কপি","Submit payment":"পেমেন্ট জমা দিন","Admin will update your order status (Success / Failed / Lock) after checking.":"যাচাইয়ের পর অ্যাডমিন আপনার অর্ডারের স্ট্যাটাস (সফল / ব্যর্থ / লক) আপডেট করবেন।",
+  "Cancel and release this order":"বাতিল করে অর্ডার ছেড়ে দিন",
+  "Redeem":"রিডিম","Redeem code":"রিডিম কোড","Redeem history":"রিডিম হিস্টোরি","No redeem history yet":"এখনো কোনো রিডিম হিস্টোরি নেই",
+  "Sign up bonus":"সাইন আপ বোনাস","One time reward for your account.":"আপনার অ্যাকাউন্টের জন্য এককালীন রিওয়ার্ড।","✅ Bonus claimed":"✅ বোনাস নেওয়া হয়েছে",
+  "It was added to your balance. You can see it in Balance Details.":"এটি আপনার ব্যালেন্সে যোগ হয়েছে। ব্যালেন্সের বিবরণে দেখতে পারবেন।",
+  "You can claim this only once.":"এটি শুধু একবারই নিতে পারবেন।","No sign up bonus is available right now.":"এখন কোনো সাইন আপ বোনাস নেই।",
+  "Wallet number (01XXXXXXXXX)":"ওয়ালেট নম্বর (01XXXXXXXXX)",
+  "You can add as many wallets as you want. The same number can be added once as bKash and once as Nagad. Different numbers are allowed. After saving, only admin can remove a wallet. A number can be linked to one account only.":"আপনি যত খুশি ওয়ালেট যোগ করতে পারবেন। একই নম্বর একবার বিকাশ ও একবার নগদ হিসেবে যোগ করা যায়। ভিন্ন নম্বরও যোগ করা যাবে। সেভ করার পর শুধু অ্যাডমিন ওয়ালেট মুছতে পারবে। একটি নম্বর শুধু একটি অ্যাকাউন্টে যুক্ত থাকতে পারে।",
+  "Save wallet":"ওয়ালেট সেভ করুন","Enter an 11-digit number starting with 01.":"01 দিয়ে শুরু ১১ সংখ্যার নম্বর দিন।",
+  "Tap a group or channel to chat with us.":"আমাদের সাথে চ্যাট করতে একটি গ্রুপ বা চ্যানেলে ট্যাপ করুন।",
+  "Support links are not available right now. Please try again later.":"সাপোর্ট লিংক এখন পাওয়া যাচ্ছে না। পরে আবার চেষ্টা করুন।","Choose your language.":"আপনার ভাষা বেছে নিন।",
+  "Refreshed":"রিফ্রেশ হয়েছে","Code copied":"কোড কপি হয়েছে","Number copied":"নম্বর কপি হয়েছে","Referral link copied":"রেফারেল লিংক কপি হয়েছে","Could not copy automatically":"স্বয়ংক্রিয়ভাবে কপি করা যায়নি",
+  "Wallet added":"ওয়ালেট যোগ হয়েছে","Collection started":"কালেকশন শুরু হয়েছে","Wallet offline":"ওয়ালেট অফলাইন","Balance refreshed":"ব্যালেন্স রিফ্রেশ হয়েছে",
+  "Order released back to the pool":"অর্ডার পুলে ফিরিয়ে দেওয়া হয়েছে","Could not cancel this order":"অর্ডার বাতিল করা যায়নি",
+  "Sorry, another user just took this order":"দুঃখিত, অন্য একজন ইউজার এইমাত্র এই অর্ডার নিয়েছেন","This order is no longer available":"এই অর্ডার আর পাওয়া যাচ্ছে না","This order is not available":"এই অর্ডার পাওয়া যাচ্ছে না",
+  "Submitted. Your order is Pending until admin checks it":"জমা হয়েছে। অ্যাডমিন যাচাই না করা পর্যন্ত আপনার অর্ডার পেন্ডিং থাকবে",
+  "Enter your 11-digit number (01XXXXXXXXX)":"আপনার ১১ সংখ্যার নম্বর দিন (01XXXXXXXXX)","Enter a valid Transaction ID (6-20 letters or numbers)":"সঠিক ট্রানজ্যাকশন আইডি দিন (৬-২০ অক্ষর বা সংখ্যা)",
+  "Enter a valid redeem code":"সঠিক রিডিম কোড দিন","Invalid redeem code":"রিডিম কোড সঠিক নয়","This code is not active":"এই কোড সক্রিয় নয়","This code is not valid for your account":"এই কোড আপনার অ্যাকাউন্টের জন্য নয়",
+  "This code has been fully redeemed":"এই কোড সম্পূর্ণ ব্যবহার হয়ে গেছে","You already redeemed this code":"আপনি এই কোড আগেই রিডিম করেছেন","This code cannot be redeemed":"এই কোড রিডিম করা যাবে না",
+  "You already claimed your sign up bonus":"আপনি ইতিমধ্যে সাইন আপ বোনাস নিয়েছেন","No sign up bonus is available right now":"এখন কোনো সাইন আপ বোনাস নেই","Could not claim the bonus":"বোনাস নেওয়া যায়নি",
+  "Order released because you left without sending payment details":"পেমেন্টের তথ্য না দিয়ে বেরিয়ে যাওয়ায় অর্ডার ছেড়ে দেওয়া হয়েছে",
+  "Time is over. The order was released back to the pool.":"সময় শেষ। অর্ডার পুলে ফিরিয়ে দেওয়া হয়েছে।"
+};
+["Account deleted","Account banned","Account suspended","Balance frozen","Account locked"].forEach(k=>{ BN[k+"."] = BN[k]+"।"; });
+const BNP = [
+  [/^Connecting to server\.\.\. (\d+)s$/, m=>"সার্ভারের সাথে সংযোগ হচ্ছে... "+m[1]+" সেকেন্ড"],
+  [/^Sale orders (\d+)$/, m=>"বিক্রির অর্ডার "+m[1]],
+  [/^Purchase orders (\d+)$/, m=>"ক্রয়ের অর্ডার "+m[1]],
+  [/^(\d+) connected$/, m=>m[1]+" যুক্ত"],
+  [/^(\d+) online$/, m=>m[1]+" অনলাইন"],
+  [/^Today's earning: (.+) BDT$/, m=>"আজকের আয়: "+m[1]+" BDT"],
+  [/^Redeem code \((.*)\)$/, m=>"রিডিম কোড ("+m[1]+")"],
+  [/^Balance after: (.+) BDT$/, m=>"পরে ব্যালেন্স: "+m[1]+" BDT"],
+  [/^Joined (.+)$/, m=>"যোগ দিয়েছেন "+m[1]],
+  [/^Reward \((.+)%\)$/, m=>"রিওয়ার্ড ("+m[1]+"%)"],
+  [/^(You|Admin|System) · (.+)$/, m=>({You:"আপনি",Admin:"অ্যাডমিন",System:"সিস্টেম"})[m[1]]+" · "+trStr(m[2])],
+  [/^Take order (.+) BDT$/, m=>"অর্ডার নিন "+m[1]+" BDT"],
+  [/^Pay (.+) BDT$/, m=>"পরিশোধ করুন "+m[1]+" BDT"],
+  [/^✅ Order created with (.+)\. It is locked for you only\.$/, m=>"✅ "+m[1]+" দিয়ে অর্ডার তৈরি হয়েছে। এটি শুধু আপনার জন্য লক করা আছে।"],
+  [/^Send exactly (.+) BDT to this (.+) number$/, m=>"ঠিক "+m[1]+" BDT এই "+m[2]+" নম্বরে পাঠান"],
+  [/^Your (.+) number \(sent from\)$/, m=>"আপনার "+m[1]+" নম্বর (যে নম্বর থেকে পাঠিয়েছেন)"],
+  [/^Claim (.+) BDT$/, m=>m[1]+" BDT নিন"],
+  [/^Redeemed! \+(.+) BDT added to your balance$/, m=>"রিডিম সফল! আপনার ব্যালেন্সে +"+m[1]+" BDT যোগ হয়েছে"],
+  [/^Claimed! \+(.+) BDT added to your balance$/, m=>"নেওয়া হয়েছে! +"+m[1]+" BDT ব্যালেন্সে যোগ হয়েছে"],
+  [/^This number is already added as (.+) \(on this or another account\)\.$/, m=>"এই নম্বর ইতিমধ্যে "+m[1]+" হিসেবে যোগ করা আছে (এই বা অন্য অ্যাকাউন্টে)।"],
+  [/^This number is already added as (.+)\.$/, m=>"এই নম্বর ইতিমধ্যে "+m[1]+" হিসেবে যোগ করা হয়েছে।"],
+  [/^Note: (.+)$/, m=>"নোট: "+m[1]],
+  [/^(.+): (redeem is disabled|this action is disabled|new orders are disabled|claim is disabled)$/, m=>trStr(m[1])+": "+({"redeem is disabled":"রিডিম বন্ধ আছে","this action is disabled":"এই কাজ বন্ধ আছে","new orders are disabled":"নতুন অর্ডার বন্ধ আছে","claim is disabled":"নেওয়া বন্ধ আছে"})[m[2]]]
+];
+function trStr(s){
+  const core = String(s).trim(); if(!core) return s;
+  let r = BN[core];
+  if(r === undefined) for(const [re,fn] of BNP){ const m = core.match(re); if(m){ r = fn(m); break; } }
+  if(r === undefined) return s;
+  const i = s.indexOf(core);
+  return s.slice(0,i) + r + s.slice(i+core.length);
+}
+function trWalk(n){
+  if(n.nodeType === 3){ const v = trStr(n.nodeValue); if(v !== n.nodeValue) n.nodeValue = v; return; }
+  if(n.nodeType !== 1 || /^(SCRIPT|STYLE|TEXTAREA)$/.test(n.tagName)) return;
+  for(const a of ["placeholder","aria-label","title"]){ const x = n.getAttribute(a); if(x){ const v = trStr(x); if(v !== x) n.setAttribute(a,v); } }
+  n.childNodes.forEach(trWalk);
+}
+try{
+  new MutationObserver(muts => {
+    if(curLang() !== "bn") return;
+    muts.forEach(mu => { if(mu.type === "characterData") trWalk(mu.target); else mu.addedNodes.forEach(trWalk); });
+  }).observe(document.body, { childList:true, subtree:true, characterData:true });
+}catch{}
+function setLang(l){
+  try{ localStorage.setItem("nova_lang", l); }catch{}
+  S._lang = l; document.documentElement.lang = l; render(true);
+}
+function openLang(){
+  const en = (S.langCfg && Array.isArray(S.langCfg.enabled) && S.langCfg.enabled.length) ? S.langCfg.enabled : ["en","bn"];
+  const cur = curLang(), list = LANGS.filter(l=>en.includes(l[0]));
+  const m = document.createElement("div"); m.className = "modal";
+  m.innerHTML = `<div class="sheet"><div class="flex"><h2 class="sp" style="font-family:var(--display);font-size:17px;color:var(--gd)">Language</h2><button id="lg_x" style="font-size:24px;padding:0 6px" aria-label="Close">×</button></div>
+  <div class="sub" style="margin-bottom:6px">Choose your language.</div>
+  ${list.map(([k,n])=>`<button class="sup" data-lg="${k}" style="width:100%;text-align:left"><span class="sp"><b>${n}</b></span><span style="color:var(--g);font-weight:700;font-size:18px">${k===cur?"✓":""}</span></button>`).join("")}</div>`;
+  document.body.append(m);
+  const close = () => m.remove();
+  m.querySelector("#lg_x").onclick = close;
+  m.addEventListener("click", e => { if(e.target === m) return close(); const b = e.target.closest("[data-lg]"); if(b){ setLang(b.dataset.lg); close(); } });
+}
+function rewardsView(){
+  const amt = Number(S.sbonus||0), got = S.profile.bonusClaimed === true;
+  return `<header><button class="ib" data-back aria-label="Back">${CHEV}</button><h1>New Rewards</h1></header>
+  <div class="hero sky" style="padding:22px 16px"><div style="font-size:34px">🎁</div><div style="font-family:var(--display);font-size:20px;font-weight:700;margin-top:8px">Sign up bonus</div><div style="margin-top:6px;opacity:.92">One time reward for your account.</div><div style="font-family:var(--display);font-size:30px;font-weight:700;margin-top:14px">${fmt(amt)} BDT</div></div>
+  <div class="panel">${got
+    ? `<div style="text-align:center;font-weight:700;color:var(--g)">✅ Bonus claimed</div><div class="sub" style="text-align:center;margin-top:6px">It was added to your balance. You can see it in Balance Details.</div>`
+    : amt > 0
+      ? `<button class="btn" data-claimbonus ${S.bonusBusy ? "disabled" : ""}>${S.bonusBusy ? "..." : "Claim "+fmt(amt)+" BDT"}</button><div class="sub" style="margin-top:8px;text-align:center">You can claim this only once.</div>`
+      : `<div class="empty" style="padding:12px 0">No sign up bonus is available right now.</div>`}</div>`;
+}
+async function doClaimBonus(){
+  if(S.bonusBusy) return;
+  if(restricted()) return toast(ACC_MSG[accStatus()][0]+": claim is disabled");
+  if(S.profile.bonusClaimed === true) return toast("You already claimed your sign up bonus");
+  const amt = Number(S.sbonus||0);
+  if(!(amt > 0)) return toast("No sign up bonus is available right now");
+  if(DEMO){ S.profile.balance = Math.round((Number(S.profile.balance||0)+amt)*100)/100; S.profile.bonusClaimed = true; toast("Claimed! +"+fmt(amt)+" BDT added to your balance"); render(); return; }
+  S.bonusBusy = true; render();
+  try{
+    const uid = S.user.uid;
+    const got = await fb.runTransaction(db, async t=>{
+      const uRef = fb.doc(db,"users",uid), us = await t.get(uRef);
+      const sRef = fb.doc(db,"settings","signupBonus"), ss = await t.get(sRef);
+      const lRef = fb.doc(db,"users",uid,"ledger","signup_bonus"), ls = await t.get(lRef);
+      if(!us.exists()) throw new Error("Profile not found");
+      if(us.data().bonusClaimed === true || ls.exists()) throw new Error("You already claimed your sign up bonus");
+      const a = Number(ss.exists() ? ss.data().amount : 0) || 0;
+      if(!(a > 0)) throw new Error("No sign up bonus is available right now");
+      const nb = Math.round((Number(us.data().balance||0)+a)*100)/100;
+      t.update(uRef,{balance:nb,bonusClaimed:true});
+      t.set(lRef,{kind:"signup_bonus",direction:"credit",amount:a,balanceAfter:nb,createdAt:fb.serverTimestamp()});
+      return a;
+    });
+    toast("Claimed! +"+fmt(got)+" BDT added to your balance");
+  }catch(e){
+    console.error(e);
+    toast(e.code==="permission-denied" ? "Could not claim the bonus" : (e.message||"Claim failed"));
+  }
+  S.bonusBusy = false; render();
+}
 function openSupport(){
   const items = S.sup.filter(x=>/^https?:\/\//i.test(x.url||""));
   const m = document.createElement("div"); m.className = "modal";
@@ -395,7 +588,7 @@ function mine(){
     <div><div style="font-size:14px;font-weight:600;opacity:.95">${esc(phoneShow())}</div><div style="font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:6px">${fmt(p.balance)} BDT</div><div style="font-size:11px;opacity:.9;margin-top:2px">Available balance</div></div></div>
   <button class="card row" style="margin-top:14px" data-go="balance"><span style="color:var(--g)">${IC.doc}</span><span>Balance Details</span></button>
   <div class="grid2"><button class="card row" style="margin:0" data-go="team"><span style="color:var(--g)">${IC.team}</span><span>My Team</span></button>
-  <button class="card row" style="margin:0" data-go="lang"><span style="color:var(--g)">${IC.globe}</span><span>Language<br><small class="sub">English</small></span></button></div>
+  <button class="card row" style="margin:0" data-go="lang"><span style="color:var(--g)">${IC.globe}</span><span>Language<br><small class="sub">${esc(langName(curLang()))}</small></span></button></div>
   <div class="list">${item("doc","Order History","orders")}${item("wallet","More Payment Options","pay")}${item("head","Live Support","support")}</div>
   <div class="list">${item("help","Common Questions","faq")}${item("award","New Rewards","rewards")}<button class="row" data-logout><span style="color:var(--g)">${IC.power}</span><span>Log out</span><span style="color:var(--mute)">${IC.right}</span></button></div>`;
 }
@@ -403,7 +596,7 @@ function mine(){
 function ledgerView(){
   const rows = S.ledger;
   const debit = l => (l.kind === "adjust" && l.direction === "debit") || l.kind === "withdraw";
-  const label = l => l.kind === "redeem" ? "Redeem code ("+(l.code||"")+")" : l.kind === "withdraw" ? "Sell / Withdraw" : l.kind === "withdraw_refund" ? "Withdraw refund" : l.kind === "adjust" ? (l.reason || "Balance adjustment") : l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
+  const label = l => l.kind === "signup_bonus" ? "Sign up bonus (registration bonus)" : l.kind === "redeem" ? "Redeem code ("+(l.code||"")+")" : l.kind === "withdraw" ? "Sell / Withdraw" : l.kind === "withdraw_refund" ? "Withdraw refund" : l.kind === "adjust" ? (l.reason || "Balance adjustment") : l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
   return `<header><button class="ib" data-back aria-label="Back">${CHEV}</button><h1>Balance Details</h1></header>
   <div class="hero"><div class="sub">Current balance</div><div class="big">${fmt(S.profile.balance)} BDT</div><div class="sub">Today's earning: ${fmt(todayProfile().income)} BDT</div></div>
   ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:13px;font-weight:600">${esc(label(l))}</div>${l.kind==="adjust" && l.note ? `<div class="sub">${esc(l.note)}</div>` : ""}<div class="sub">${esc(l.when)}</div>${l.kind==="adjust" && l.balanceAfter!=null ? `<div class="sub" style="font-size:11px">Balance after: ${fmt(l.balanceAfter)} BDT</div>` : ""}</div><b style="color:${debit(l)?"#c0392b":"var(--g)"};font-size:15px">${debit(l)?"−":"+"}${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet.</div>`}`;
@@ -457,7 +650,7 @@ function orderDetailView(){
   const sentTo = o.payMethod==="bkash" ? o.bkashNumber : o.payMethod==="nagad" ? o.nagadNumber : "";
   const rows = [["Order ID",String(o.id).slice(0,8).toUpperCase()],["Type","BDT Buy"],["Wallet",payLabel(o.payMethod)],["Amount",fmt(o.amount)+" BDT"],["Reward ("+(o.rate||0)+"%)",fmt(reward)+" BDT"],["Sent to",sentTo],["Sent from",o.senderNumber],["Transaction ID",o.trxId],["Created",fmtT(o.claimedMs)],["Submitted",fmtT(o.submittedMs)]].filter(r=>r[1]);
   const lbl = x => x==="open" ? "Released" : ((ST[NS(x)]||[])[0] || x);
-  let ev = (o.history||[]).map(h=>({at:h.at||0,t:(h.by==="admin"?"Admin":"You")+" · "+lbl(h.status),n:h.by==="admin"?"":(h.note||"")}));
+  let ev = (o.history||[]).map(h=>({at:h.at||0,t:(h.by==="admin"?"Admin":h.by==="system"?"System":"You")+" · "+lbl(h.status),n:h.by==="admin"?"":(h.note||"")}));
   if(!ev.length){
     if(o.claimedMs) ev.push({at:o.claimedMs,t:"You · Created"});
     if(o.submittedMs) ev.push({at:o.submittedMs,t:"You · Pending",n:"Payment submitted"});
@@ -496,7 +689,7 @@ function sheetView(){
   if(!m) body = `<p class="sub" style="margin-top:6px">Choose bKash or Nagad. The order is created instantly and locked for you, so no other user can claim it.</p>
     <div class="flex" style="margin-top:14px">${mb("bkash","bKash")}${mb("nagad","Nagad")}</div>`;
   else if(closed) body = `<p class="sub" style="margin-top:10px">This order is now: <b style="color:${ST[st][1]}">${ST[st][0]}</b>.</p>`;
-  else body = `<div class="tile" style="margin-top:12px;background:var(--mint);color:var(--g)">✅ Order created with ${ml}. It is locked for you only.</div>
+  else body = `<div class="tile" style="margin-top:12px;background:var(--mint);color:var(--g)">✅ Order created with ${ml}. It is locked for you only.<br><span style="color:var(--gd);font-size:12px">Time left: <b id="cdt">${leftTxt(o)}</b>. If you leave this page without submitting payment details, the order is released for everyone.</span></div>
     <div class="tile" style="margin-top:12px"><div class="sub">Send exactly ${fmt(o.amount)} BDT to this ${ml} number</div>
       <div class="flex"><b class="sp" style="font-size:19px;letter-spacing:1px">${esc(num)}</b><button class="btn sm out" data-copynum="${esc(num)}">Copy</button></div></div>
     <input id="ps" type="tel" inputmode="numeric" placeholder="Your ${ml} number (sent from)" value="${esc(sh.sender)}">
@@ -567,8 +760,9 @@ function render(force){
   const app = $("#app");
   if(!S.user){ app.innerHTML = authView(); return; }
   if(isOut()){ S.sheet = null; app.innerHTML = blockedView(); return; }
-  app.innerHTML = noticeBar() + (S.view === "team" ? teamView() : S.view === "orders" ? ordersView() : S.view === "odetail" ? orderDetailView() : S.view === "sdetail" ? sellDetailView() : S.view === "redeem" ? redeemView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav() + (S.sheet ? sheetView() : "");
+  app.innerHTML = noticeBar() + (S.view === "team" ? teamView() : S.view === "orders" ? ordersView() : S.view === "odetail" ? orderDetailView() : S.view === "sdetail" ? sellDetailView() : S.view === "redeem" ? redeemView() : S.view === "rewards" ? rewardsView() : S.view ? ledgerView() : ({home,buy,sell,mine})[S.tab]()) + nav() + (S.sheet ? sheetView() : "");
   navSync();
+  sheetWatch();
 }
 
 /* ---------- Data (Firestore) ---------- */
@@ -590,13 +784,19 @@ function subscribe(uid){
       }
     }),
     onS(collection(db,"users",uid,"wallets"), s=>{ S.wallets = s.docs.map(d=>({id:d.id,...d.data()})); render(); }),
-    onS(query(collection(db,"buyOrders"),where("status","in",["open","reserved"])), s=>{ S.orders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt)}; }); render(); }),
+    onS(query(collection(db,"buyOrders"),where("status","in",["open","reserved","created"])), s=>{ S.orders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt)}; }); render(); }),
     onS(query(collection(db,"buyOrders"),where("claimedBy","==",uid)), s=>{ S.myOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,claimedMs:ms(x.claimedAt),submittedMs:ms(x.submittedAt),reviewedMs:ms(x.reviewedAt)}; }); render(); }),
     onS(query(collection(db,"sellOrders"),where("userId","==",uid)), s=>{ S.sellOrders = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,createdMs:ms(x.createdAt)||(x.history&&x.history[0]&&x.history[0].at)||0}; }); render(); }),
     onS(collection(db,"users",uid,"redeems"), s=>{ S.redeems = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,ms:ms(x.createdAt)||Date.now()}; }); render(); }),
     onS(doc(db,"settings","support"), s=>{ S.sup = (s.exists() && Array.isArray(s.data().list)) ? s.data().list : []; render(); }),
     onS(doc(db,"settings","tutorials"), s=>{ S.tuts = (s.exists() && Array.isArray(s.data().list)) ? s.data().list : []; render(); }),
     onS(doc(db,"settings","rates"), s=>{ if(s.exists()) S.rates = s.data(); render(); }),
+    onS(doc(db,"settings","language"), s=>{
+      S.langCfg = s.exists() ? s.data() : null;
+      try{ if(S.langCfg && S.langCfg.default) localStorage.setItem("nova_lang_def", S.langCfg.default); }catch{}
+      const l = curLang(); if(S._lang !== l){ S._lang = l; document.documentElement.lang = l; render(); }
+    }),
+    onS(doc(db,"settings","signupBonus"), s=>{ S.sbonus = s.exists() ? (Number(s.data().amount)||0) : 0; render(); }),
     onS(query(collection(db,"users",uid,"ledger"),orderBy("createdAt","desc"),limit(100)), s=>{
       S.ledger = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,when:(x.createdAt?.toDate?.()||new Date()).toLocaleString()}; }); render(); }),
     onS(query(collection(db,"users",uid,"team"),orderBy("joinedAt","desc"),limit(200)), s=>{
@@ -776,6 +976,7 @@ async function submitPay(){
   try{
     if(DEMO){ const x = S.myOrders.find(y=>y.id===sh.id); if(x) Object.assign(x,{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx}); }
     else await fb.updateDoc(fb.doc(db,"buyOrders",sh.id),{status:"pending",payMethod:sh.method,senderNumber:sender,trxId:trx,submittedAt:fb.serverTimestamp(),history:hist("pending","Payment proof submitted ("+trx+")")});
+    S.submitted[sh.id] = true;
     S.sheet = null; S.view = "orders"; S.hTop = "buy"; S.hTab = "pending"; toast("Submitted. Your order is Pending until admin checks it");
   }catch(e){
     console.error(e);
@@ -785,13 +986,52 @@ async function submitPay(){
   S.claiming = false; render(true);
 }
 
-async function cancelClaim(id){
+S.relIds = {}; S.submitted = {}; S.relTry = {};
+const leftTxt = o => { const l = Math.max(0, CLAIM_MS-(Date.now()-(o.claimedMs||Date.now()))); return p2(Math.floor(l/60000))+":"+p2(Math.floor(l%60000/1000)); };
+/* leaving the pay sheet without submitting payment details releases the order */
+function sheetWatch(){
+  const cur = S.sheet ? S.sheet.id : null;
+  if(S._shId && S._shId !== cur){
+    const id = S._shId; S._shId = null;
+    const o = S.myOrders.find(x=>x.id===id);
+    if(o && isMine(o) && !o.trxId && !S.submitted[id] && !S.relIds[id]) cancelClaim(id, "Order released because you left without sending payment details");
+  }
+  if(cur) S._shId = cur;
+}
+/* any online user releases claimed orders whose time is over (rules check the real server time) */
+async function releaseExpired(){
+  if(DEMO || !S.user || isOut()) return;
+  const now = Date.now();
+  for(const o of S.orders){
+    if(o.status !== "created" || o.trxId || !o.claimedMs) continue;
+    if(now - o.claimedMs < CLAIM_MS + 3000) continue;
+    if(S.relTry[o.id] && now - S.relTry[o.id] < 60000) continue;
+    S.relTry[o.id] = now;
+    try{ await fb.updateDoc(fb.doc(db,"buyOrders",o.id), {status:"open", claimedBy:null, claimedAt:null, payMethod:null, senderNumber:null, trxId:null, history:fb.arrayUnion({status:"open", by:"system", at:Date.now(), note:"Auto released: time is over, payment details were not submitted"})}); }
+    catch(e){ /* already released by someone else, or not yet expired on the server */ }
+  }
+}
+let tickN = 0;
+setInterval(()=>{
+  const sh = S.sheet;
+  if(sh && sh.created && S.user){
+    const o = findOrder(sh.id) || sh.snap || {};
+    if(OS(o)==="created" && !o.trxId && o.claimedMs){
+      const el = $("#cdt"); if(el) el.textContent = leftTxt(o);
+      if(Date.now()-o.claimedMs >= CLAIM_MS && !S.claiming) cancelClaim(sh.id, "Time is over. The order was released back to the pool.");
+    }
+  }
+  if(++tickN % 20 === 0) releaseExpired();
+}, 1000);
+
+async function cancelClaim(id, msg){
   if(S.claiming) return;
+  S.relIds[id] = Date.now();
   S.claiming = true;
   try{
     if(DEMO) S.myOrders = S.myOrders.filter(x=>x.id!==id);
     else await fb.updateDoc(fb.doc(db,"buyOrders",id), {status:"open", claimedBy:null, claimedAt:null, payMethod:null, senderNumber:null, trxId:null, history:hist("open","Released by user")});
-    S.sheet = null; if(S.view==="odetail") S.view = "orders"; toast("Order released back to the pool");
+    S.sheet = null; if(S.view==="odetail") S.view = "orders"; toast(msg || "Order released back to the pool");
   }catch(e){
     console.error(e);
     toast("Could not cancel this order");
@@ -833,13 +1073,15 @@ document.addEventListener("click", async e=>{
   else if("sharelink" in d){ if(navigator.share){ try{ await navigator.share({title:"Join me on Nova Pay", url:refLink()}); }catch{} } else copyOrShow(refLink(), "Referral link copied"); }
   else if("copy" in d) copyOrShow(S.profile.code||"", "Code copied");
   else if("go" in d && d.go==="support") openSupport();
+  else if("go" in d && d.go==="lang") openLang();
   else if("go" in d && d.go==="redeem"){ S.view="redeem"; render(); scrollTo(0,0); }
   else if("redeem" in d) doRedeem();
+  else if("claimbonus" in d) doClaimBonus();
   else if("go" in d && d.go==="collections"){ S.view="orders"; S.hTop="sell"; S.sTab="all"; render(); scrollTo(0,0); }
   else if("tut" in d) playTut(Number(d.tut));
   else if("osdetail" in d){ S.detailSid=d.osdetail; S.view="sdetail"; render(); scrollTo(0,0); }
   else if("stab" in d){ S.sTab=d.stab; render(); }
-  else if("go" in d){ const v = d.go==="purchases" ? "orders" : d.go; if(["balance","orders","team"].includes(v)){ S.view=v; if(v==="orders"){ S.hTab="all"; S.hTop="buy"; } render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
+  else if("go" in d){ const v = d.go==="purchases" ? "orders" : d.go; if(["balance","orders","team","rewards"].includes(v)){ S.view=v; if(v==="orders"){ S.hTab="all"; S.hTop="buy"; } render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
   else if("mode" in d){ S.authMode=S.authMode==="login"?"register":"login"; S.err=""; S.refOk=undefined; S.refMsg=""; render(); }
   else if("auth" in d) doAuth();
   else if("logout" in d){ S.authForm={phone:"",pw:"",pw2:"",ref:""}; S.refOk=undefined; S.refMsg=""; if(DEMO){ S.user=null; render(); } else await fb.signOut(auth); }
