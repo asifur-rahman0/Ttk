@@ -596,7 +596,7 @@ function mine(){
 function ledgerView(){
   const rows = S.ledger;
   const debit = l => (l.kind === "adjust" && l.direction === "debit") || l.kind === "withdraw";
-  const label = l => l.kind === "signup_bonus" ? "Sign up bonus (registration bonus)" : l.kind === "redeem" ? "Redeem code ("+(l.code||"")+")" : l.kind === "withdraw" ? "Sell / Withdraw" : l.kind === "withdraw_refund" ? "Withdraw refund" : l.kind === "adjust" ? (l.reason || "Balance adjustment") : l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
+  const label = l => l.kind === "signup_bonus" ? "Sign up bonus (registration bonus)" : l.kind === "redeem" ? "Redeem code ("+(l.code||"")+")" : l.kind === "withdraw" ? "Sell / Withdraw" : l.kind === "withdraw_refund" ? "Withdraw refund" : l.kind === "adjust" ? (l.reason || "Balance adjustment") : l.kind === "referral" ? "Referral commission ("+(l.levelName||"")+")" : l.kind === "reward" ? "Task reward (today's earning)" : "Order amount (added to balance)";
   return `<header><button class="ib" data-back aria-label="Back">${CHEV}</button><h1>Balance Details</h1></header>
   <div class="hero"><div class="sub">Current balance</div><div class="big">${fmt(S.profile.balance)} BDT</div><div class="sub">Today's earning: ${fmt(todayProfile().income)} BDT</div></div>
   ${rows.length ? rows.map(l => `<div class="card flex"><div class="sp"><div style="font-size:13px;font-weight:600">${esc(label(l))}</div>${l.kind==="adjust" && l.note ? `<div class="sub">${esc(l.note)}</div>` : ""}<div class="sub">${esc(l.when)}</div>${l.kind==="adjust" && l.balanceAfter!=null ? `<div class="sub" style="font-size:11px">Balance after: ${fmt(l.balanceAfter)} BDT</div>` : ""}</div><b style="color:${debit(l)?"#c0392b":"var(--g)"};font-size:15px">${debit(l)?"−":"+"}${fmt(l.amount)} BDT</b></div>`).join("") : `<div class="empty">No records yet.</div>`}`;
@@ -610,6 +610,7 @@ function teamView(){
     ${S.codeOk===true ? `<div class="sub" style="color:var(--g);margin-top:8px">Link active</div>` : S.codeOk===false ? `<div class="err">Link not active (${esc(S.codeErr)}). Publish the latest Firestore rules, then reload.</div>` : `<div class="sub" style="margin-top:8px">Checking link...</div>`}
     <div class="flex" style="margin-top:14px"><button class="btn sm" data-copylink>Copy link</button><button class="btn sm out" data-sharelink>Share</button></div></div>
   <div class="card flex"><div class="sp sub">Team members</div><b style="font-size:21px">${S.team.length}</b></div>
+  <div class="card flex"><div class="sp sub">Referral commission earned</div><b style="font-size:21px">${fmt(S.profile.refIncome)} BDT</b></div>
   ${S.team.length ? S.team.map(m=>`<div class="card flex"><div class="logo" style="background:var(--teal);border-radius:50%">${esc((m.name||"?")[0])}</div><div class="sp"><div style="font-size:14px;font-weight:600">${esc(m.name)}</div><div class="sub">Joined ${esc(m.when)}</div></div></div>`).join("") : `<div class="empty">No members yet. Share your link to invite people.</div>`}`;
 }
 
