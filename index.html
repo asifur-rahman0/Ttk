@@ -163,7 +163,7 @@ const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
 /* "Today" follows Bangladesh time (UTC+6), so it resets at 12:00 AM for everyone and matches the admin panel */
 const todayStr = () => new Date(Date.now()+6*3600*1000).toISOString().slice(0,10);
-const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
+const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, saleAmount:0, saleOrders:0, purchaseAmount:0, purchaseOrders:0}; };
 const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", sWal:null, bWal:null, tdW:null, user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, sbonus:0, bonusBusy:false, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false, tmLv:"all", tmTab:"active", tmList:0, rcfg:null, refToday:0 };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
@@ -802,6 +802,7 @@ function navSync(){
   if (navRestoring) return;
   try {
     const snap = navSnap(), key = JSON.stringify(snap);
+    if (S.user) { try { sessionStorage.setItem("nova_nav", JSON.stringify({ u:S.user.uid, t:snap.t, v:snap.v, d:snap.d, s:snap.s })); } catch {} }
     if (navLast === null) { history.replaceState({ nv:snap, i:0 }, ""); navLast = key; navIdx = 0; return; }
     if (key !== navLast) { history.pushState({ nv:snap, i:++navIdx }, ""); navLast = key; }
   } catch {}
@@ -1227,7 +1228,13 @@ if(!DEMO){
     }catch(e){ showErr("Firebase could not load: "+e.message+" (check internet or VPN)"); return; }
     fb.onAuthStateChanged(auth,u=>{
       if(u && !/@nerivo\.local$/i.test(u.email||"")){ fb.signOut(auth); return; }   /* not a user-panel account (e.g. an old admin session): sign out */
-      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sellOrders=[]; S.redeems=[]; S.rcInput=""; S.sheet=null;
+      S.user=u; unsubs.forEach(x=>x()); unsubs=[]; S.view=null; S.codeChecked=false;
+      /* page refresh: stay on the same page (Home / Buy / Sell / Mine or inner page) instead of jumping to Home */
+      if(!window.__navBoot){ window.__navBoot = true;
+        if(u){ try{ const sv = JSON.parse(sessionStorage.getItem("nova_nav")||"null");
+          if(sv && sv.u===u.uid && ["home","buy","sell","mine"].includes(sv.t)){ S.tab=sv.t; S.view=sv.v||null; S.detailId=sv.d||null; S.detailSid=sv.s||null; } }catch{} }
+      } else if(!u){ try{ sessionStorage.removeItem("nova_nav"); }catch{} S.tab="home"; }
+      S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sellOrders=[]; S.redeems=[]; S.rcInput=""; S.sheet=null;
       render();
       if(u) subscribe(u.uid);
     });
