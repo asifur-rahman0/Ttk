@@ -164,7 +164,7 @@ const fmt = n => Number(n || 0).toFixed(2);
 /* "Today" follows Bangladesh time (UTC+6), so it resets at 12:00 AM for everyone and matches the admin panel */
 const todayStr = () => new Date(Date.now()+6*3600*1000).toISOString().slice(0,10);
 const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", sWal:null, bWal:null, tdW:null, user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, sbonus:0, bonusBusy:false, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false, tmLv:"all", tmTab:"active", tmList:0, rcfg:null };
+const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", sWal:null, bWal:null, tdW:null, user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, sbonus:0, bonusBusy:false, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false, tmLv:"all", tmTab:"active", tmList:0, rcfg:null, refToday:0 };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
 S.authForm.ref = REF;
@@ -192,7 +192,7 @@ const setStatus = t => { S.status = t; if(!READY && !S.user) render(); };
 
 const demoData = () => {
   S.profile = { phone:"+880 184****059", balance:13.63, code:"WcLvJ8", statsDate:todayStr(), saleAmount:45222, saleOrders:39, purchaseAmount:0, purchaseOrders:0, income:1245.46 };
-  S.team = [{id:"t1",name:"+880 171****234",when:"10/1/2026",level:0,tasks:34,amount:3820,active:true,need:30},{id:"t2",name:"+880 190****877",when:"9/29/2026",level:0,tasks:12,amount:1260,active:false,need:30},{id:"t3",name:"+880 175****410",when:"9/25/2026",level:1,tasks:31,amount:3410,active:true,need:30},{id:"t4",name:"+880 168****905",when:"9/20/2026",level:2,tasks:5,amount:540,active:false,need:30}];
+  S.refToday = 12.5; S.team = [{id:"t1",name:"+880 171****234",when:"10/1/2026",level:0,tasks:34,amount:3820,active:true,need:30},{id:"t2",name:"+880 190****877",when:"9/29/2026",level:0,tasks:12,amount:1260,active:false,need:30},{id:"t3",name:"+880 175****410",when:"9/25/2026",level:1,tasks:31,amount:3410,active:true,need:30},{id:"t4",name:"+880 168****905",when:"9/20/2026",level:2,tasks:5,amount:540,active:false,need:30}];
   S.wallets = [{id:"1",type:"bkash",number:"01828975671",balance:0,online:false},{id:"2",type:"nagad",number:"01828975671",balance:5628.82,online:true}];
   S.orders = [{id:"a",amount:111,type:"bkash",mask:"179***7kPO",rate:3,cancels:0,status:"open",bkashNumber:"01700000001",nagadNumber:"01800000002"},{id:"b",amount:104,type:"bkash",mask:"179***USsO",rate:3,cancels:0,status:"open",bkashNumber:"01700000001",nagadNumber:"01800000002"},{id:"c",amount:110,type:"nagad",mask:"179***q0HO",rate:3,cancels:0,status:"open",bkashNumber:"01700000001",nagadNumber:"01800000002"}];
 };
@@ -384,7 +384,7 @@ const BN = {
   "Wallet Services":"ওয়ালেট সার্ভিস","Manage connected wallets.":"যুক্ত ওয়ালেট পরিচালনা করুন।","Sell Records":"বিক্রির রেকর্ড",
   "Online":"অনলাইন","Offline":"অফলাইন","Go offline":"অফলাইন হোন","Start collection":"কালেকশন শুরু করুন","↙ Collect":"↙ গ্রহণ","↗ Pay":"↗ পেমেন্ট","Today":"আজ",
   "No wallets yet. Add one to start collecting.":"এখনো কোনো ওয়ালেট নেই। কালেকশন শুরু করতে একটি যোগ করুন।","Add Wallet":"ওয়ালেট যোগ করুন",
-  "Available balance":"উপলব্ধ ব্যালেন্স","Balance Details":"ব্যালেন্সের বিবরণ","My Team":"আমার টিম","Language":"ভাষা","Order History":"অর্ডার হিস্টোরি",
+  "Available balance":"উপলব্ধ ব্যালেন্স","Balance Details":"ব্যালেন্সের বিবরণ","My Team":"আমার টিম","Today's referral commission":"আজকের রেফার কমিশন","Resets at 12:00 AM":"রাত ১২টায় রিসেট হয়","Total commission (A + B + C levels)":"মোট কমিশন (A + B + C লেভেল)","Language":"ভাষা","Order History":"অর্ডার হিস্টোরি",
   "More Payment Options":"আরও পেমেন্ট অপশন","Live Support":"লাইভ সাপোর্ট","Common Questions":"সাধারণ প্রশ্ন","New Rewards":"নতুন রিওয়ার্ড","Log out":"লগ আউট",
   "Current balance":"বর্তমান ব্যালেন্স","Sell / Withdraw":"বিক্রি / উইথড্র","Withdraw refund":"উইথড্র ফেরত","Task reward (today's earning)":"টাস্ক রিওয়ার্ড (আজকের আয়)",
   "Order amount (added to balance)":"অর্ডারের পরিমাণ (ব্যালেন্সে যোগ হয়েছে)","Sign up bonus (registration bonus)":"সাইন আপ বোনাস (রেজিস্ট্রেশন বোনাস)",
@@ -658,7 +658,8 @@ function teamView(){
   <div class="hero sky" style="padding:15px"><div style="font-family:var(--display);font-weight:700;font-size:15px">Team summary</div>
     <div class="lvs"><button class="${S.tmLv==="all"?"act":""}" data-tmlv="all">All</button>${lvs.map(i=>`<button class="${S.tmLv===String(i)?"act":""}" data-tmlv="${i}">${LVN(i)}</button>`).join("")}</div>
     <div class="tm3"><div><b>${top.length}</b><span>Members</span></div><div><b>${tTasks}</b><span>Tasks done</span></div><div><b>${fmt(tAmt)}</b><span>Total transaction (BDT)</span></div></div></div>
-  <div class="card flex"><div class="sp sub">Referral commission earned</div><b style="font-size:19px">${fmt(S.profile.refIncome)} BDT</b></div>
+  <div class="card"><div class="flex"><div class="sp sub">Today's referral commission</div><b style="font-size:19px;color:var(--g)">${fmt(S.refToday)} BDT</b></div>
+    <div class="flex" style="margin-top:11px;padding-top:11px;border-top:1px solid var(--line,#e5e7eb)"><div class="sp sub">Total commission (A + B + C levels)</div><b style="font-size:16px">${fmt(S.profile.refIncome)} BDT</b></div></div>
   <div class="hero" style="margin-top:11px"><div class="sub">Your referral code</div><div class="big">${esc(S.profile.code||"...")}</div>
     <div class="sub" style="word-break:break-all;margin-top:8px">${esc(link)}</div>
     ${S.codeOk===true ? `<div class="sub" style="color:var(--g);margin-top:8px">Link active</div>` : S.codeOk===false ? `<div class="err">Link not active (${esc(S.codeErr)}). Publish the latest Firestore rules, then reload.</div>` : `<div class="sub" style="margin-top:8px">Checking link...</div>`}
@@ -841,7 +842,9 @@ function subscribe(uid){
         S.profile = {}; S.authMode = "login"; S.err = "This account has been deleted. Contact support.";
         fb.signOut(auth); return;
       }
-      S.profile = s.data()||{}; render();
+      { const nd = s.data()||{}, o = S.profile||{}, a = Object.keys(nd).filter(k=>k!=="lastSeenAt"), b = Object.keys(o).filter(k=>k!=="lastSeenAt");
+        const same = s.exists() && a.length === b.length && a.every(k=>JSON.stringify(nd[k]) === JSON.stringify(o[k]));
+        S.profile = nd; if(!same) render(); }
       if(s.exists() && s.data().code && !S.codeChecked){ S.codeChecked = true; ensureCode(uid, s.data().code); }
       if(!s.exists() && !s.metadata.fromCache && !S.creating && !S.registering){
         S.creating = true;
@@ -867,7 +870,9 @@ function subscribe(uid){
       S.ledger = s.docs.map(d=>{ const x=d.data(); return {id:d.id,...x,when:(x.createdAt?.toDate?.()||new Date()).toLocaleString()}; }); render(); }),
     onS(query(collection(db,"users",uid,"team"),limit(1000)), s=>{
       S.team = s.docs.map(d=>{ const x=d.data(); return {id:d.id,name:x.name,jms:ms(x.joinedAt),when:(x.joinedAt?.toDate?.()||new Date()).toLocaleDateString(),level:Number(x.level)||0,tasks:Number(x.tasks)||0,amount:Number(x.amount)||0,active:x.active===true,need:Number(x.need)||0}; }).sort((a,b)=>b.jms-a.jms); render(); }),
-    onSnapshot(doc(db,"settings","referral"), s=>{ S.rcfg = s.exists() ? s.data() : null; render(); }, ()=>{})
+    onSnapshot(doc(db,"settings","referral"), s=>{ S.rcfg = s.exists() ? s.data() : null; render(); }, ()=>{}),
+    listenTodayRef(uid),
+    startPresence(uid)
   ];
 }
 
@@ -997,6 +1002,39 @@ async function toggleWallet(id){
 }
 
 /* Step 1: tap "Claim" -> sheet opens (nothing is written yet). Step 2: pick bKash/Nagad -> order is created + locked instantly. */
+/* Today's referral commission: counts only entries created since 12:00 AM (device local time),
+   and starts again from 0.00 at every midnight. */
+/* Online status for admin: save lastSeenAt about every 30 seconds while the app is open and visible. */
+function startPresence(uid){
+  const beat = () => { if(document.hidden || navigator.onLine === false) return; fb.updateDoc(fb.doc(db,"users",uid),{lastSeenAt:fb.serverTimestamp()}).catch(()=>{}); };
+  const vis = () => { if(!document.hidden) beat(); };
+  const iv = setInterval(beat, 30000);
+  document.addEventListener("visibilitychange", vis);
+  beat();
+  return () => { clearInterval(iv); document.removeEventListener("visibilitychange", vis); };
+}
+function listenTodayRef(uid){
+  let un = null, timer = null, dead = false;
+  const run = () => {
+    if(dead) return;
+    if(un){ un(); un = null; }
+    const start = new Date(); start.setHours(0,0,0,0);
+    const next = new Date(start); next.setDate(next.getDate()+1);
+    S.refToday = 0; render();
+    const {collection,query,where,orderBy,onSnapshot,Timestamp} = fb;
+    un = onSnapshot(query(collection(db,"users",uid,"ledger"), where("createdAt",">=",Timestamp.fromDate(start)), orderBy("createdAt","desc")), snap=>{
+      let t = 0;
+      snap.docs.forEach(d=>{ const x = d.data(), a = Number(x.amount)||0;
+        if(x.kind === "referral" || x.kind === "referral_bonus") t += a;
+        else if(x.kind === "referral_reverse") t -= a; });
+      S.refToday = Math.max(0, Math.round(t*100)/100); render();
+    }, ()=>{});
+    timer = setTimeout(run, next - Date.now() + 500);     /* midnight: reset to 0 */
+  };
+  run();
+  return () => { dead = true; if(un) un(); clearTimeout(timer); };
+}
+
 function startClaim(id){
   if(restricted()) return toast(ACC_MSG[accStatus()][0]+": new orders are disabled");
   const o = findOrder(id); if(!o) return;
