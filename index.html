@@ -164,13 +164,14 @@ const fmt = n => Number(n || 0).toFixed(2);
 /* "Today" follows Bangladesh time (UTC+6), so it resets at 12:00 AM for everyone and matches the admin panel */
 const todayStr = () => new Date(Date.now()+6*3600*1000).toISOString().slice(0,10);
 const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, sbonus:0, bonusBusy:false, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false, tmLv:"all", tmTab:"active", tmList:0, rcfg:null };
+const S = { hTab:"all", hTop:"buy", detailId:null, tab:"home", sWal:null, bWal:null, tdW:null, user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, sbonus:0, bonusBusy:false, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false, tmLv:"all", tmTab:"active", tmList:0, rcfg:null };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
 S.authForm.ref = REF;
 const esc = x => String(x ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const rnd6 = () => (Math.random().toString(36) + "000000").slice(2, 8);
 const refLink = () => location.origin + location.pathname + "?ref=" + (S.profile.code || "");
+const maskId = m => { m = String(m||""); return (m.includes("*") || m.length <= 8) ? m : m.slice(0,3)+"***"+m.slice(-4); };   /* task cards show a short masked ID, e.g. 179***PjPuI */
 const maskName = (ph, em) => (ph && ph.length >= 8) ? ph.slice(0,4) + "****" + ph.slice(-3) : ((em || "user").split("@")[0].slice(0,2) + "***");
 const phoneToEmail = ph => ph.replace(/\D/g,"") + "@nerivo.local";
 async function touchIp(uid){
@@ -414,7 +415,7 @@ const BN = {
   "Save wallet":"ওয়ালেট সেভ করুন","Enter an 11-digit number starting with 01.":"01 দিয়ে শুরু ১১ সংখ্যার নম্বর দিন।",
   "Tap a group or channel to chat with us.":"আমাদের সাথে চ্যাট করতে একটি গ্রুপ বা চ্যানেলে ট্যাপ করুন।",
   "Support links are not available right now. Please try again later.":"সাপোর্ট লিংক এখন পাওয়া যাচ্ছে না। পরে আবার চেষ্টা করুন।","Choose your language.":"আপনার ভাষা বেছে নিন।",
-  "Refreshed":"রিফ্রেশ হয়েছে","Code copied":"কোড কপি হয়েছে","Number copied":"নম্বর কপি হয়েছে","Referral link copied":"রেফারেল লিংক কপি হয়েছে","Could not copy automatically":"স্বয়ংক্রিয়ভাবে কপি করা যায়নি",
+  "Refreshed":"রিফ্রেশ হয়েছে","Show all":"সব দেখুন","Today's withdrawals (resets at 12:00 AM)":"আজকের উইথড্র (রাত ১২টায় রিসেট হয়)","Receiver number":"রিসিভার নম্বর","Order ID copied":"অর্ডার আইডি কপি হয়েছে","Order mask copied":"অর্ডার মাস্ক কপি হয়েছে","Order mask":"অর্ডার মাস্ক","Code copied":"কোড কপি হয়েছে","Number copied":"নম্বর কপি হয়েছে","Referral link copied":"রেফারেল লিংক কপি হয়েছে","Could not copy automatically":"স্বয়ংক্রিয়ভাবে কপি করা যায়নি",
   "Wallet added":"ওয়ালেট যোগ হয়েছে","Collection started":"কালেকশন শুরু হয়েছে","Wallet offline":"ওয়ালেট অফলাইন","Balance refreshed":"ব্যালেন্স রিফ্রেশ হয়েছে",
   "Order released back to the pool":"অর্ডার পুলে ফিরিয়ে দেওয়া হয়েছে","Could not cancel this order":"অর্ডার বাতিল করা যায়নি",
   "Sorry, another user just took this order":"দুঃখিত, অন্য একজন ইউজার এইমাত্র এই অর্ডার নিয়েছেন","This order is no longer available":"এই অর্ডার আর পাওয়া যাচ্ছে না","This order is not available":"এই অর্ডার পাওয়া যাচ্ছে না",
@@ -583,7 +584,7 @@ function buy(){
   <div class="hero"><div class="flex"><div class="sp"><h2>Buy Platform Balance</h2><div class="sub" style="font-size:13px">Choose amount and wallet.</div></div><button class="flex" style="color:var(--g)" data-go="purchases">${IC.wallet} Purchase records</button></div>
     <div class="seg" style="margin-top:14px"><button class="${S.cur==="BDT"?"act":""}" data-cur="BDT">BDT</button><button class="${S.cur==="USDT"?"act":""}" data-cur="USDT">USDT</button></div></div>
   <div class="ranges">${RLAB.map((l,i)=>`<button class="${i===S.range?"act":""}" data-range="${i}">${l}</button>`).join("")}</div>
-  ${list.length ? list.map(o=>`<div class="card"><div class="flex">${logo(o.type)}<div class="sp"><div class="big" style="margin:0;font-size:22px">${fmt(o.amount)} BDT</div><div class="sub" style="font-size:14px">${typeLabel(o.type)}</div></div><span class="sub">${o.mask}</span></div>
+  ${list.length ? list.map(o=>`<div class="card"><div class="flex">${logo(o.type)}<div class="sp"><div class="big" style="margin:0;font-size:22px">${fmt(o.amount)} BDT</div><div class="sub" style="font-size:14px">${typeLabel(o.type)}</div></div><span class="sub">${esc(maskId(o.mask))}</span></div>
     <div class="flex" style="margin-top:12px"><div class="stats"><div><b>+${fmt(o.amount*o.rate/100)} BDT</b>Reward</div><div><b>${fmt(o.rate)}%</b>Reward rate</div><div><b>${o.cancels}</b>Cancellations</div></div>
     <button class="btn sm" style="padding:15px 14px;font-size:11px" data-claim="${o.id}">${isMine(o) ? "Continue payment" : "Claim purchase order"}</button>${isMine(o) && !o.trxId ? `<button class="btn sm out" style="padding:15px 14px;font-size:11px;margin-left:8px" data-cancel="${o.id}">Cancel</button>` : ""}</div></div>`).join("")
    : `<div class="empty">No orders in this range yet. Try another amount.</div>`}`;
@@ -598,9 +599,19 @@ function sell(){
     <span class="tag">${w.online?"Online":"Offline"}</span><button style="color:var(--g)" data-sync="${w.id}">${IC.sync}</button></div>
     <div class="flex" style="margin-top:14px;padding-bottom:14px;border-bottom:1px solid var(--line)"><div class="big sp" style="font-size:24px">${fmt(w.balance)} BDT</div>
     <button class="btn sm ${w.online?"out":""}" style="min-width:118px;padding:18px" data-toggle="${w.id}">${w.online?"Go offline":"Start collection"}</button></div>
-    <div class="flex" style="justify-content:space-around;margin-top:14px;color:var(--gd)"><span>↙ Collect</span><span>↗ Pay</span><span>Today</span></div></div>`).join("")
+    <div class="flex" style="justify-content:space-around;margin-top:14px;color:var(--gd)"><button data-wcol="${w.id}" style="font:inherit;color:inherit;text-decoration:underline;text-underline-offset:4px;font-weight:700">↙ Collect</button><button data-wpay="${w.id}" style="font:inherit;color:inherit;text-decoration:underline;text-underline-offset:4px;font-weight:700">↗ Pay</button><button data-wtoday="${w.id}" style="font:inherit;color:inherit;text-decoration:underline;text-underline-offset:4px;font-weight:700">Today</button></div>${S.tdW===w.id ? todayPanel(w) : ""}</div>`).join("")
    : `<div class="empty">No wallets yet. Add one to start collecting.</div>`}
   <button class="btn" style="margin-top:26px;font-size:18px" data-add>Add Wallet</button>`;
+}
+
+/* Today's withdrawals to this wallet's receiver number (Bangladesh day, back to 0 at 12:00 AM) */
+function todayPanel(w){
+  const fin = o => ms(o.reviewedAt) || (o.history && o.history.length ? Math.max(...o.history.map(h=>h.at||0)) : 0) || o.createdMs || 0;
+  const isToday = t => t && new Date(t + 6*3600*1000).toISOString().slice(0,10) === todayStr();
+  const mine = S.sellOrders.filter(o=>o.method===w.type && String(o.number)===String(w.number) && isToday(fin(o)));
+  const ok = mine.filter(o=>o.status==="success").length, bad = mine.filter(o=>o.status==="failed").length;
+  const t = (l,v,c) => `<div class="tile" style="text-align:center"><div class="sub">${l}</div><div class="big" style="font-size:19px;${c?"color:"+c:""};word-break:break-all">${v}</div></div>`;
+  return `<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px"><div class="sub" style="margin-bottom:8px">Today's withdrawals (resets at 12:00 AM)</div><div style="display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:8px">${t("Success",ok,"#188a4d")}${t("Failed",bad,"#d64545")}${t("Receiver number",esc(w.number))}</div></div>`;
 }
 
 function mine(){
@@ -675,18 +686,24 @@ function ordersView(){
   let body = `<div class="empty">No Data</div>`;
   if(S.hTop === "buy"){
     const chips = CHIPS.map(([k,l])=>`<button class="${S.hTab===k?"act":""}" data-htab="${k}">${l}</button>`).join("");
-    const all = [...S.myOrders].sort((a,b)=>(b.claimedMs||0)-(a.claimedMs||0));
+    const all0 = [...S.myOrders].sort((a,b)=>(b.claimedMs||0)-(a.claimedMs||0));
+    const bf = S.bWal ? S.wallets.find(w=>w.id===S.bWal) : null;
+    const all = bf ? all0.filter(o=>o.payMethod===bf.type && (!o.senderNumber || String(o.senderNumber)===String(bf.number))) : all0;
     const rows = S.hTab === "all" ? all : all.filter(o=>OS(o)===S.hTab);
+    const bbar = bf ? `<div class="card flex" style="margin:0 0 10px;padding:11px 14px"><div class="sp sub"><span>Wallet</span> <b style="color:var(--gd)">${esc(payLabel(bf.type))} ${esc(bf.number)}</b></div><button style="color:var(--g);font-weight:700" data-wclear>Show all</button></div>` : "";
     const card = o => `<button class="ocard" data-odetail="${o.id}"><span class="oc1">${wlogo(o.payMethod)}<span class="sp"><span class="oamt">${esc(o.amount)}</span><span class="ow">${esc(o.payMethod||"")}</span></span>${pill(OS(o))}</span><span class="oc2"><span>${esc(fmtT(o.claimedMs))}</span><b>Details ›</b></span></button>`;
-    body = `<div class="ochips">${chips}</div>` + (rows.length ? rows.map(card).join("") : `<div class="empty">No Data</div>`);
+    body = bbar + `<div class="ochips">${chips}</div>` + (rows.length ? rows.map(card).join("") : `<div class="empty">No Data</div>`);
   }
   if(S.hTop === "sell"){
     const SC = [["all","All"],["processing","Processing"],["success","Success"],["failed","Failed"],["lock","Locked"]];
     const chips = SC.map(([k,l])=>`<button class="${S.sTab===k?"act":""}" data-stab="${k}">${l}</button>`).join("");
     const all = [...S.sellOrders].sort((a,b)=>(b.createdMs||0)-(a.createdMs||0));
-    const rows = S.sTab === "all" ? all : all.filter(o=>o.status===S.sTab);
+    const wf = S.sWal ? S.wallets.find(w=>w.id===S.sWal) : null;
+    const byW = wf ? all.filter(o=>o.method===wf.type && String(o.number)===String(wf.number)) : all;
+    const rows = S.sTab === "all" ? byW : byW.filter(o=>o.status===S.sTab);
+    const wbar = wf ? `<div class="card flex" style="margin:0 0 10px;padding:11px 14px"><div class="sp sub"><span>Wallet</span> <b style="color:var(--gd)">${esc(payLabel(wf.type))} ${esc(wf.number)}</b></div><button style="color:var(--g);font-weight:700" data-wclear>Show all</button></div>` : "";
     const card = o => `<button class="ocard" data-osdetail="${o.id}"><span class="oc1">${wlogo(o.method)}<span class="sp"><span class="oamt">${esc(o.amount)}</span><span class="ow">${esc(o.number||"")}</span></span>${pill(o.status)}</span><span class="oc2"><span>${esc(fmtT(o.createdMs))}</span><b>Details ›</b></span></button>`;
-    body = `<div class="ochips">${chips}</div>` + (rows.length ? rows.map(card).join("") : `<div class="empty">No Data</div>`);
+    body = wbar + `<div class="ochips">${chips}</div>` + (rows.length ? rows.map(card).join("") : `<div class="empty">No Data</div>`);
   }
   return `<div class="ohead"><button data-back aria-label="Back">${CHEV}</button><h1>Order History</h1><button data-orefresh aria-label="Refresh">${REFRESH}</button></div><div class="otabs">${tabs}</div>${body}`;
 }
@@ -697,7 +714,7 @@ function orderDetailView(){
   if(!o) return head + `<div class="empty">Order not found</div>`;
   const st = OS(o), reward = Math.round((o.amount||0)*(o.rate||0))/100;
   const sentTo = o.payMethod==="bkash" ? o.bkashNumber : o.payMethod==="nagad" ? o.nagadNumber : "";
-  const rows = [["Order ID",String(o.id).slice(0,8).toUpperCase()],["Type","BDT Buy"],["Wallet",payLabel(o.payMethod)],["Amount",fmt(o.amount)+" BDT"],["Reward ("+(o.rate||0)+"%)",fmt(reward)+" BDT"],["Sent to",sentTo],["Sent from",o.senderNumber],["Transaction ID",o.trxId],["Created",fmtT(o.claimedMs)],["Submitted",fmtT(o.submittedMs)]].filter(r=>r[1]);
+  const rows = [["Order ID",maskId(o.mask) || String(o.id).slice(0,8).toUpperCase()],["Type","BDT Buy"],["Wallet",payLabel(o.payMethod)],["Amount",fmt(o.amount)+" BDT"],["Reward ("+(o.rate||0)+"%)",fmt(reward)+" BDT"],["Sent to",sentTo],["Sent from",o.senderNumber],["Transaction ID",o.trxId],["Created",fmtT(o.claimedMs)],["Submitted",fmtT(o.submittedMs)]].filter(r=>r[1]);
   const lbl = x => x==="open" ? "Released" : ((ST[NS(x)]||[])[0] || x);
   let ev = (o.history||[]).map(h=>({at:h.at||0,t:(h.by==="admin"?"Admin":h.by==="system"?"System":"You")+" · "+lbl(h.status),n:h.by==="admin"?"":(h.note||"")}));
   if(!ev.length){
@@ -709,7 +726,7 @@ function orderDetailView(){
   const note = st==="pending" ? "Waiting for admin to check your payment." : st==="lock" ? "This order is locked by admin." : st==="created" ? "Send the money and submit the Transaction ID to continue." : "";
   return `${head}
   <div class="card" style="text-align:center"><div class="oamt" style="font-size:27px">${esc(o.amount)} <span style="font-size:13px;color:var(--mute)">BDT</span></div><div style="margin-top:10px">${pill(st)}</div>${note ? `<div class="sub" style="margin-top:10px">${note}</div>` : ""}</div>
-  <div class="card">${rows.map(r=>`<div class="drow"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div>
+  <div class="card">${rows.map(r=>r[0]==="Order ID" ? `<div class="drow"><span>${esc(r[0])}</span><span style="display:flex;align-items:center;gap:8px;min-width:0"><b style="word-break:break-all;text-align:right">${esc(r[1])}</b><button class="btn sm out" style="padding:6px 12px;flex:none" data-copyid="${esc(r[1])}">Copy</button></span></div>` : `<div class="drow"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div>
   ${ev.length ? `<div class="card"><b>Timeline</b>${ev.map(e=>`<div class="drow" style="display:block"><div style="font-weight:600">${esc(e.t)}</div>${e.n ? `<div class="sub">${esc(e.n)}</div>` : ""}<div class="sub" style="font-size:11px">${esc(fmtT(e.at))}</div></div>`).join("")}</div>` : ""}
   ${st==="created" ? `<div class="flex" style="margin-top:16px;gap:10px"><button class="btn" data-claim="${o.id}">Continue payment</button><button class="btn out" data-cancel="${o.id}">Cancel</button></div>` : ""}`;
 }
@@ -724,7 +741,7 @@ function sellDetailView(){
   const note = st==="processing" ? "Your balance was deducted. Admin is processing your withdrawal." : st==="success" ? "The money was sent to your wallet." : st==="failed" ? "Withdrawal failed. The amount was refunded to your balance." : st==="lock" ? "This request is locked by admin. Contact support." : "";
   return `${head}
   <div class="card" style="text-align:center"><div class="oamt" style="font-size:27px">${esc(o.amount)} <span style="font-size:13px;color:var(--mute)">BDT</span></div><div style="margin-top:10px">${pill(st)}</div>${note ? `<div class="sub" style="margin-top:10px">${note}</div>` : ""}</div>
-  <div class="card">${rows.map(r=>`<div class="drow"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div>
+  <div class="card">${rows.map(r=>r[0]==="Order ID" ? `<div class="drow"><span>${esc(r[0])}</span><span style="display:flex;align-items:center;gap:8px;min-width:0"><b style="word-break:break-all;text-align:right">${esc(r[1])}</b><button class="btn sm out" style="padding:6px 12px;flex:none" data-copyid="${esc(r[1])}">Copy</button></span></div>` : `<div class="drow"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div>
   ${ev.length ? `<div class="card"><b>Timeline</b>${ev.map(e=>`<div class="drow" style="display:block"><div style="font-weight:600">${esc(e.t)}</div>${e.n ? `<div class="sub">${esc(e.n)}</div>` : ""}<div class="sub" style="font-size:11px">${esc(fmtT(e.at))}</div></div>`).join("")}</div>` : ""}`;
 }
 
@@ -1108,7 +1125,11 @@ document.addEventListener("click", async e=>{
   else if("cur" in d){ S.cur=d.cur; render(); }
   else if("range" in d){ S.range=+d.range; render(); }
   else if("htab" in d){ S.hTab=d.htab; render(); }
-  else if("otop" in d){ S.hTop=d.otop; render(); }
+  else if("otop" in d){ S.hTop=d.otop; S.sWal=null; S.bWal=null; render(); }
+  else if("wpay" in d){ S.bWal=d.wpay; S.sWal=null; S.view="orders"; S.hTop="buy"; S.hTab="all"; render(); scrollTo(0,0); }
+  else if("wcol" in d){ S.bWal=null; S.sWal=d.wcol; S.view="orders"; S.hTop="sell"; S.sTab="all"; render(); scrollTo(0,0); }
+  else if("wtoday" in d){ S.tdW = S.tdW===d.wtoday ? null : d.wtoday; render(); }
+  else if("wclear" in d){ S.sWal=null; S.bWal=null; render(); }
   else if("odetail" in d){ S.detailId=d.odetail; S.view="odetail"; render(); scrollTo(0,0); }
   else if("orefresh" in d){ if(!DEMO && S.user) subscribe(S.user.uid); toast("Refreshed"); }
   else if("claim" in d) startClaim(d.claim);
@@ -1118,6 +1139,7 @@ document.addEventListener("click", async e=>{
   else if("closesheet" in d){ if(navIdx > 0 && navLast && JSON.parse(navLast).sh){ history.back(); } else { S.sheet=null; render(true); } }
   else if("submitpay" in d) submitPay();
   else if("copynum" in d) copyOrShow(d.copynum, "Number copied");
+  else if("copyid" in d) copyOrShow(d.copyid, d.cmsg==="mask" ? "Order mask copied" : "Order ID copied");
   else if("toggle" in d) toggleWallet(d.toggle);
   else if("sync" in d) toast("Balance refreshed");
   else if("add" in d) addWalletSheet();
@@ -1129,14 +1151,14 @@ document.addEventListener("click", async e=>{
   else if("go" in d && d.go==="redeem"){ S.view="redeem"; render(); scrollTo(0,0); }
   else if("redeem" in d) doRedeem();
   else if("claimbonus" in d) doClaimBonus();
-  else if("go" in d && d.go==="collections"){ S.view="orders"; S.hTop="sell"; S.sTab="all"; render(); scrollTo(0,0); }
+  else if("go" in d && d.go==="collections"){ S.sWal=null; S.bWal=null; S.view="orders"; S.hTop="sell"; S.sTab="all"; render(); scrollTo(0,0); }
   else if("tut" in d) playTut(Number(d.tut));
   else if("osdetail" in d){ S.detailSid=d.osdetail; S.view="sdetail"; render(); scrollTo(0,0); }
   else if("stab" in d){ S.sTab=d.stab; render(); }
   else if("tmlv" in d){ S.tmLv=d.tmlv; render(); }
   else if("tmtab" in d){ S.tmTab=d.tmtab; render(); }
   else if("tmlist" in d){ S.tmList=+d.tmlist; render(); }
-  else if("go" in d){ const v = d.go==="purchases" ? "orders" : d.go; if(["balance","orders","team","rewards"].includes(v)){ S.view=v; if(v==="orders"){ S.hTab="all"; S.hTop="buy"; } render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
+  else if("go" in d){ const v = d.go==="purchases" ? "orders" : d.go; if(["balance","orders","team","rewards"].includes(v)){ S.view=v; if(v==="orders"){ S.hTab="all"; S.hTop="buy"; S.sWal=null; S.bWal=null; } render(); scrollTo(0,0); } else toast("Coming soon: "+d.go); }
   else if("mode" in d){ S.authMode=S.authMode==="login"?"register":"login"; S.err=""; S.refOk=undefined; S.refMsg=""; render(); }
   else if("auth" in d) doAuth();
   else if("logout" in d){ S.authForm={phone:"",pw:"",pw2:"",ref:""}; S.refOk=undefined; S.refMsg=""; if(DEMO){ S.user=null; render(); } else await fb.signOut(auth); }
