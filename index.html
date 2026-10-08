@@ -132,69 +132,102 @@ a.lnk{color:var(--g);font-weight:700;text-decoration:underline;cursor:pointer}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* ---- USDT recharge (Buy > USDT) ---- */
-.ux-hero{position:relative;overflow:hidden;border-radius:20px;padding:14px 15px;color:#fff;background:linear-gradient(140deg,#12304f 0,#1a4d78 55%,#1f7a78 120%);box-shadow:0 12px 24px -14px rgba(18,48,79,.6)}
-.ux-hero::after{content:"";position:absolute;right:-34px;top:-38px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(94,208,178,.28),transparent 70%);pointer-events:none}
+.ux-hero{position:relative;overflow:hidden;border-radius:20px;padding:14px 15px;color:#fff;background:linear-gradient(145deg,#4cc0ff 0,#1d93f2 55%,#0f6fd0 100%);box-shadow:0 18px 32px -14px rgba(15,111,208,.7)}
+.ux-hero::after{content:"";position:absolute;right:-40px;top:-56px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.14);pointer-events:none}.ux-hero::before{content:"";position:absolute;right:56px;bottom:-60px;width:96px;height:96px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none}
 .ux-hero>*{position:relative;z-index:1}
 .ux-k{font-size:9.5px;font-weight:700;letter-spacing:.14em;opacity:.75}
 .ux-hero h2{font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:-.01em;margin-top:2px}
-.ux-rec{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:6px 10px;font-size:11px;font-weight:600;color:#fff}.ux-rec svg{width:15px;height:15px}
+.ux-rec{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:12px;padding:6px 10px;font-size:11px;font-weight:600;color:#fff}.ux-rec svg{width:15px;height:15px}
 .ux-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
-.ux-chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:4px 9px;font-size:10.5px;font-weight:600}
-.ux-hero .seg{background:rgba(255,255,255,.1);margin-top:11px!important;border-radius:14px;padding:3px}.ux-hero .seg button{color:#c5d8ea;padding:7px;font-size:12px;border-radius:11px}.ux-hero .seg button.act{background:#fff;color:#12304f;box-shadow:none}
+.ux-chip{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:4px 9px;font-size:10.5px;font-weight:600}
+.ux-hero .seg{background:rgba(255,255,255,.22);margin-top:11px!important;border-radius:14px;padding:3px}.ux-hero .seg button{color:#eaf6ff;padding:7px;font-size:12px;border-radius:11px}.ux-hero .seg button.act{background:#fff;color:var(--g);box-shadow:0 5px 11px -6px rgba(10,47,85,.5)}
 .ux-steps{display:flex;align-items:flex-start;margin:12px 4px 0}
 .ux-st{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--mute);flex:0 0 auto;min-width:60px}
 .ux-st i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10.5px;background:#fff;border:1.5px solid var(--line)}
 .ux-st.on{color:var(--gd)}.ux-st.on i{background:var(--g);border-color:var(--g);color:#fff}
-.ux-st.ok{color:#12805f}.ux-st.ok i{background:#26a17b;border-color:#26a17b;color:#fff}
+.ux-st.ok{color:var(--g)}.ux-st.ok i{background:var(--sky);border-color:var(--sky);color:#fff}
 .ux-st.bad{color:#c0392b}.ux-st.bad i{background:#c0392b;border-color:#c0392b;color:#fff}
-.ux-ln{flex:1;height:2px;background:var(--line);margin:10px 4px 0}.ux-ln.on{background:#26a17b}
+.ux-ln{flex:1;height:2px;background:var(--line);margin:10px 4px 0}.ux-ln.on{background:var(--sky)}
 .ux-h{font-family:var(--display);font-size:13px;font-weight:700;margin:14px 0 7px;display:flex;justify-content:space-between;align-items:baseline;color:var(--ink)}
 .ux-h small{font-family:var(--body);font-size:10px;color:var(--mute);font-weight:600}
-.ux-net>div{display:inline-flex;align-items:center;gap:8px;background:#f1faf7;border:1.5px solid #26a17b;border-radius:13px;padding:7px 13px 7px 9px}
-.ux-t{width:24px;height:24px;border-radius:50%;background:#26a17b;color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:0 0 auto}
+.ux-net>div{display:inline-flex;align-items:center;gap:8px;background:var(--mint);border:1.5px solid var(--sky);border-radius:13px;padding:7px 13px 7px 9px}
+.ux-t{width:24px;height:24px;border-radius:50%;background:linear-gradient(160deg,#42b9ff,#1383e6);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:0 0 auto}
 .ux-net b{display:block;font-size:12px;color:var(--ink)}.ux-net .s{display:block;font-size:10px;color:var(--mute)}
 .ux-amts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .ux-amts button{background:#fff;border:1.5px solid var(--line);border-radius:13px;padding:8px 4px;text-align:center}
 .ux-amts button b{display:block;font-family:var(--display);font-size:14px;color:var(--ink)}
 .ux-amts button small{display:block;font-size:9.5px;color:var(--mute);margin-top:1px}
-.ux-amts button.act{background:#1a4d78;border-color:#1a4d78}.ux-amts button.act b,.ux-amts button.act small{color:#fff}
+.ux-amts button.act{background:linear-gradient(160deg,#42b9ff,#1383e6);border-color:var(--g);box-shadow:0 8px 14px -9px rgba(19,131,230,.9)}.ux-amts button.act b,.ux-amts button.act small{color:#fff}
 .ux-amts button:disabled{opacity:.4}
-.ux-inp{display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--line);border-radius:15px;padding:6px}
+.ux-inp:focus-within{border-color:var(--sky);box-shadow:0 0 0 3px rgba(56,182,255,.18)}.ux-inp{display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--line);border-radius:15px;padding:6px}
 .ux-inp button{width:34px;height:34px;border-radius:11px;background:var(--mint);color:var(--g);font-size:18px;font-weight:700;flex:0 0 auto}
 .ux-inp input{flex:1;min-width:0;border:0;outline:0;background:transparent;text-align:center;font-family:var(--display);font-size:19px;font-weight:700;color:var(--ink)}
 .ux-inp em{font-style:normal;font-size:11px;font-weight:700;color:var(--mute)}
 .ux-err{color:#c0392b;font-size:11px;min-height:14px;margin-top:4px;font-weight:600}
-.ux-tk{background:#fff;border:1px solid var(--line);border-radius:18px;margin-top:6px;box-shadow:var(--shadow)}
+.ux-tk{background:linear-gradient(180deg,#fff,#f3faff);border:1px solid var(--line);border-radius:18px;margin-top:6px;box-shadow:var(--shadow)}
 .ux-tk-top{padding:13px;text-align:center}
 .ux-tk-top .l{font-size:11px;color:var(--mute);font-weight:600}
-.ux-tk-top .v{font-family:var(--display);font-size:27px;font-weight:700;color:#12805f;letter-spacing:-.02em;margin-top:2px}
+.ux-tk-top .v{font-family:var(--display);font-size:27px;font-weight:700;color:var(--g);letter-spacing:-.02em;margin-top:2px}
 .ux-tk-top .v span{font-size:12px;margin-left:5px;color:var(--mute);font-weight:700}
 .ux-tk-top .r{display:inline-block;margin-top:6px;background:var(--mint);border-radius:10px;padding:4px 10px;font-size:10.5px;color:var(--gd);font-weight:700}
-.ux-cut{border-top:2px dashed var(--line);margin:0 16px}
+.ux-cut{border-top:2px dashed var(--mint2);margin:0 16px}
 .ux-tk-bot{padding:11px 15px 14px;display:grid;gap:7px}
 .ux-l2{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--mute)}.ux-l2 b{color:var(--ink)}
 .ux-l2.tot{border-top:1px solid var(--line);padding-top:8px;font-size:12.5px}.ux-l2.tot b{color:var(--g);font-family:var(--display);font-size:15px}
-.ux-go{width:100%;margin-top:13px;border-radius:14px;padding:12px;font-family:var(--display);font-size:13.5px;font-weight:600;color:#fff;background:linear-gradient(120deg,#1a4d78,#1f7a78);box-shadow:0 8px 16px -10px rgba(18,48,79,.7);display:flex;align-items:center;justify-content:center;gap:8px}
+.ux-go{width:100%;margin-top:13px;border-radius:14px;padding:12px;font-family:var(--display);font-size:13.5px;font-weight:600;color:#fff;background:linear-gradient(160deg,#42b9ff,#1383e6);box-shadow:0 11px 19px -10px rgba(19,131,230,.9);display:flex;align-items:center;justify-content:center;gap:8px}
 .ux-go:disabled{opacity:.5;box-shadow:none}
 .ux-note{margin-top:9px;font-size:11px;color:var(--mute);line-height:1.5;text-align:center}
 .ux-addr{display:flex;align-items:center;gap:8px;background:var(--mint);border:1.5px dashed #9ccff7;border-radius:12px;padding:9px 11px;word-break:break-all;font-size:12px;font-weight:600;color:var(--gd)}
 .ux-addr span{flex:1;min-width:0}.ux-addr button{flex:0 0 auto;background:#fff;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:700;color:var(--g)}
 .ux-warn{background:#fff6e0;border-radius:12px;padding:9px 11px;font-size:11px;color:#8a5a00;line-height:1.5;margin-top:10px}
 .ux-tx{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;outline:0;margin-top:6px;background:#fff;color:var(--ink)}
-.ux-st-card{border-radius:18px;padding:14px 16px;color:#fff;margin-top:12px;background:linear-gradient(140deg,#12304f,#1a4d78)}
-.ux-st-card.success{background:linear-gradient(140deg,#0f4f43,#1c7d68)}.ux-st-card.failed{background:linear-gradient(140deg,#6b2620,#a8403a)}.ux-st-card.created{background:linear-gradient(140deg,#12304f,#1f6a8a)}
+.ux-st-card{border-radius:18px;padding:14px 16px;color:#fff;margin-top:12px;background:linear-gradient(145deg,#4cc0ff 0,#1d93f2 55%,#0f6fd0 100%);box-shadow:0 14px 26px -14px rgba(15,111,208,.7)}
+.ux-st-card.success{background:linear-gradient(145deg,#1d93f2,#0a4fa3)}.ux-st-card.failed{background:linear-gradient(145deg,#e4736a,#b8403a)}.ux-st-card.created{background:linear-gradient(145deg,#6cc9ff,#3aa2f0)}.ux-st-card.lock{background:linear-gradient(145deg,#7d9bbd,#4f6f93)}
 .ux-st-card .big{color:#fff;font-size:22px;margin:4px 0}.ux-st-card .sub{color:rgba(255,255,255,.85);font-size:11.5px}
-</style>
-</head>
+
+.modal.ux-center{place-items:center;padding:16px;z-index:40}
+.ux-dlg{width:100%;max-width:420px;background:#fff;border-radius:22px;padding:16px;max-height:92vh;overflow:auto;box-shadow:0 24px 50px -20px rgba(10,47,85,.6)}
+.ux-dh{display:flex;gap:11px;align-items:center}
+.ux-dic{width:42px;height:42px;border-radius:50%;background:#fff3d6;color:#d98a00;display:grid;place-items:center;flex:0 0 auto}
+.ux-dh h3{font-family:var(--display);font-size:15px;font-weight:700;color:var(--ink)}
+.ux-dh p{font-size:11.5px;color:var(--mute);margin-top:2px;line-height:1.4}
+.ux-dred{background:#fff0ef;border-radius:14px;padding:11px 12px;margin-top:12px;color:#b3261e}
+.ux-dred b{display:block;font-family:var(--display);font-size:13px;margin-bottom:5px}
+.ux-dred p,.ux-dyel p{font-size:11.5px;line-height:1.5}.ux-dred p+p{margin-top:6px}
+.ux-dyel{background:#fff7e0;border-radius:14px;padding:11px 12px;margin-top:10px;color:#7a5200}
+.ux-dyel b{display:block;font-family:var(--display);font-size:13px;margin-bottom:4px}
+.ux-dchk{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:var(--mute);margin-top:9px;line-height:1.45}
+.ux-dchk i{flex:0 0 auto;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--sky);color:var(--g);display:grid;place-items:center;font-size:9px;font-style:normal;margin-top:1px}
+.ux-dbtn{display:flex;gap:10px;margin-top:16px}
+.ux-dbtn button{flex:1;padding:12px 8px;border-radius:14px;font-size:13px;font-weight:700}
+.ux-dbtn .c{background:var(--mint);color:var(--g);flex:.75}.ux-dbtn .o{flex:1.5;white-space:nowrap}
+.ux-dbtn .o{color:#fff;background:linear-gradient(160deg,#42b9ff,#1383e6);box-shadow:0 11px 19px -10px rgba(19,131,230,.9)}
+
+.ux-qrbox{margin-top:14px;text-align:center}
+.ux-qrnote{font-size:11.5px;color:var(--mute);margin-bottom:10px}
+.ux-qr{display:inline-block;background:#fff;padding:12px;border-radius:18px;border:2px solid var(--sky);box-shadow:var(--shadow)}
+.ux-qr svg{display:block;width:196px;height:196px}
+.ux-qrsub{font-size:11px;color:var(--mute);margin-top:10px;line-height:1.5}
+.ux-qrbtns{display:flex;gap:10px;margin-top:10px}
+.ux-qrbtns button{flex:1;padding:9px 6px;border-radius:12px;background:var(--mint);color:var(--g);font-size:12px;font-weight:700}
+
+.ux-timer{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);border-radius:12px;padding:5px 10px;font-size:12px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+.ux-timer.exp{background:rgba(255,255,255,.92);color:#b3261e;border-color:transparent}
+.ohead .ux-rf{width:36px;height:36px;display:grid;place-items:center;border-radius:50%;color:var(--g)}
+.ux-rf.spin svg{animation:uxspin .7s linear infinite}@keyframes uxspin{to{transform:rotate(360deg)}}
+.ux-stop{width:100%;margin-top:10px;padding:12px;border-radius:14px;border:1.5px solid var(--line);background:#fff;color:var(--mute);font-size:13px;font-weight:600}
+.ux-st-card.cancelled{background:linear-gradient(145deg,#8fa3b8,#5f7a94)}
+.ux-stopt{font-size:13px;color:var(--ink);line-height:1.6;margin-top:14px}.ux-dbtn .o:disabled{opacity:.5;box-shadow:none}</style>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"><link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"><link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></head>
 <body>
-<div id="app"><p style="padding:40px 20px;color:#7d8b86">Loading...</p></div>
+<div id="app"></div>
 
 <script>
 var __errs=[];
 function showErr(m){__errs.push(String(m));if(__errs.length>3)__errs.shift();var d=document.getElementById('errbar')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'errbar'}));d.style.cssText='position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;padding:12px 16px;font-size:11px;z-index:99;word-break:break-word;cursor:pointer';d.textContent='Error: '+__errs.join(' | ')+'  (tap to close)';d.onclick=function(){__errs=[];d.remove()};clearTimeout(window.__et);window.__et=setTimeout(function(){__errs=[];d.remove()},15000);}
 addEventListener('error',function(e){showErr(e.message)});
 addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.message)||e.reason)});
-setTimeout(function(){var a=document.getElementById('app');if(a&&a.textContent.trim()==='Loading...')showErr('The app script has not started after 8 seconds. The page is probably still downloading on a slow network. Wait a little or reload.')},8000);
+setTimeout(function(){var a=document.getElementById('app');if(a&&a.textContent.trim()==='')showErr('The app script has not started after 8 seconds. The page is probably still downloading on a slow network. Wait a little or reload.')},8000);
 </script>
 <script type="module">
 /* ============ 1) Paste your Firebase config here (Firebase Console > Project settings) ============ */
@@ -217,8 +250,9 @@ const $ = s => document.querySelector(s);
 const fmt = n => Number(n || 0).toFixed(2);
 /* "Today" follows Bangladesh time (UTC+6), so it resets at 12:00 AM for everyone and matches the admin panel */
 const todayStr = () => new Date(Date.now()+6*3600*1000).toISOString().slice(0,10);
-const todayProfile = () => { const p = S.profile || {}; return p.statsDate === todayStr() ? p : {...p, income:0, saleAmount:0, saleOrders:0, purchaseAmount:0, purchaseOrders:0}; };
-const S = { uAmt:1000, uTx:"", uBusy:false, usdtOrders:[], ucfg:null, hTab:"all", hTop:"buy", detailId:null, tab:"home", sWal:null, bWal:null, tdW:null, user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, sbonus:0, bonusBusy:false, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false, tmLv:"all", tmTab:"active", tmList:0, rcfg:null, refToday:0 };
+const todayProfile = () => { const p = S.profile || {}; const b = p.statsDate === todayStr() ? p : {...p, income:0, saleAmount:0, saleOrders:0, purchaseAmount:0, purchaseOrders:0};
+  return S.pT ? {...b, purchaseAmount:S.pT.a, purchaseOrders:S.pT.n} : b; };   /* Purchase amount/orders on Home = task purchases only (from ledger), USDT deposits are never counted */
+const S = { uStopAt:0, uStop:false, uConfirm:false, uAmt:1000, uTx:"", uBusy:false, usdtOrders:[], ucfg:null, hTab:"all", hTop:"buy", detailId:null, tab:"home", sWal:null, bWal:null, tdW:null, user:null, profile:{}, wallets:[], orders:[], ledger:[], team:[], myOrders:[], tuts:[], sup:[], redeems:[], rcInput:"", redeeming:false, sellOrders:[], sTab:"all", detailSid:null, sheet:null, view:null, claiming:false, range:0, cur:"BDT", rates:{usdt:130.34,bonus:3}, sbonus:0, bonusBusy:false, authMode:"login", err:"", authForm:{phone:"",pw:"",pw2:"",ref:""}, refOk:undefined, refMsg:"", refChecking:false, tmLv:"all", tmTab:"active", tmList:0, rcfg:null, refToday:0 };
 const REF = new URLSearchParams(location.search).get("ref") || "";
 if (REF) S.authMode = "register";
 S.authForm.ref = REF;
@@ -280,7 +314,7 @@ const ms = ts => ts?.toMillis?.() || 0;
 const NS = s => ({reserved:"created",done:"success",claimed:"success",rejected:"failed"})[s] || s;
 /* order status: an order that has a TrxID but is still "created" counts as pending (old data) */
 const OS = o => { const x = NS(o.status); return x==="created" && o.trxId ? "pending" : x; };
-const ST = {created:["Created","#8a5a00","#fff3d6"],pending:["Pending","#0b5394","#d9edff"],success:["Success","#0b7a55","#e2f6ec"],failed:["Failed","#c0392b","#fdeceb"],lock:["Locked","#5a3d99","#ece6f7"],processing:["Processing","#0b5394","#dcefff"]};
+const ST = {created:["Created","#8a5a00","#fff3d6"],pending:["Pending","#0b5394","#d9edff"],success:["Success","#0b7a55","#e2f6ec"],failed:["Failed","#c0392b","#fdeceb"],lock:["Locked","#5a3d99","#ece6f7"],cancelled:["Cancelled","#51677d","#e8eef4"],processing:["Processing","#0b5394","#dcefff"]};
 const payLabel = m => m==="bkash" ? "bKash" : m==="nagad" ? "Nagad" : (m||"");
 const findOrder = id => S.myOrders.find(x=>x.id===id) || S.orders.find(x=>x.id===id);
 const isMine = o => OS(o)==="created" && o.claimedBy===S.user?.uid;
@@ -411,9 +445,14 @@ const BN = {
   "USDT recharge is not available right now. Please try again later.":"USDT রিচার্জ এখন চালু নেই। পরে আবার চেষ্টা করুন।","USDT recharge is not available right now":"USDT রিচার্জ এখন চালু নেই","BEP20 · low fee":"BEP20 · কম ফি",
   "USDT Order":"USDT অর্ডার","Created":"তৈরি হয়েছে","Paid":"পেইড","Checking":"যাচাই হচ্ছে","Done":"সম্পন্ন","Failed":"ব্যর্থ","Send exactly":"ঠিক এই পরিমাণ পাঠান","Copy":"কপি","Copied":"কপি হয়েছে",
   "Send only USDT on the BSC (BEP20) network. Other coins or networks cannot be recovered.":"শুধু BSC (BEP20) নেটওয়ার্কে USDT পাঠান। অন্য কয়েন বা নেটওয়ার্কে পাঠালে ফেরত পাওয়া যাবে না।",
-  "Transaction hash (TXID)":"ট্রানজেকশন হ্যাশ (TXID)","Paste TXID after payment":"পেমেন্টের পর TXID পেস্ট করুন","Submit payment proof":"পেমেন্ট প্রুফ জমা দিন","Enter the transaction hash (TXID)":"ট্রানজেকশন হ্যাশ (TXID) দিন","Submitted. Admin will check it":"জমা হয়েছে। অ্যাডমিন যাচাই করবেন",
-  "Send the USDT below, then paste your transaction hash.":"নিচের ঠিকানায় USDT পাঠান, তারপর ট্রানজেকশন হ্যাশ পেস্ট করুন।","Payment proof received. Admin is checking it.":"পেমেন্ট প্রুফ পাওয়া গেছে। অ্যাডমিন যাচাই করছেন।","Recharge complete. The amount is in your balance.":"রিচার্জ সম্পন্ন। পরিমাণ আপনার ব্যালেন্সে যোগ হয়েছে।","This order failed. Contact support if you already paid.":"এই অর্ডার ব্যর্থ হয়েছে। পেমেন্ট করে থাকলে সাপোর্টে যোগাযোগ করুন।",
-  "Order ID":"অর্ডার আইডি","USDT amount":"USDT পরিমাণ","Rate":"রেট","TXID":"TXID","USDT recharge":"USDT রিচার্জ",
+  "Transaction hash (TXID)":"ট্রানজেকশন হ্যাশ (TXID)","Paste TXID after payment":"পেমেন্টের পর TXID পেস্ট করুন","Submit recharge request":"রিচার্জ রিকোয়েস্ট জমা দিন","Enter the transaction hash (TXID)":"ট্রানজেকশন হ্যাশ (TXID) দিন","Submitted. Admin will check it":"জমা হয়েছে। অ্যাডমিন যাচাই করবেন",
+  "Send the USDT below before the timer ends, then paste your transaction hash.":"নিচের ঠিকানায় USDT পাঠান, তারপর ট্রানজেকশন হ্যাশ পেস্ট করুন।","Payment proof received. Admin is checking it.":"পেমেন্ট প্রুফ পাওয়া গেছে। অ্যাডমিন যাচাই করছেন।","Recharge complete. The amount is in your balance.":"রিচার্জ সম্পন্ন। পরিমাণ আপনার ব্যালেন্সে যোগ হয়েছে।","This order failed. Contact support if you already paid.":"এই অর্ডার ব্যর্থ হয়েছে। পেমেন্ট করে থাকলে সাপোর্টে যোগাযোগ করুন।",
+  "Order ID":"অর্ডার আইডি","USDT amount":"USDT পরিমাণ","Rate":"রেট","TXID":"TXID","USDT recharge":"USDT রিচার্জ","Stop recharge order":"রিচার্জ অর্ডার বন্ধ করুন","Confirm operation":"নিশ্চিত করুন","Stop recharge order":"রিচার্জ অর্ডার বন্ধ করুন","Stop this recharge order?":"এই রিচার্জ অর্ডার বন্ধ করবেন?","Only stop it if you have NOT paid.":"পেমেন্ট না করে থাকলেই শুধু বন্ধ করুন।",
+  "If you already sent USDT, do not stop the order. Paste your TXID and submit it instead.":"আগেই USDT পাঠিয়ে থাকলে অর্ডার বন্ধ করবেন না। বরং TXID পেস্ট করে জমা দিন।","Keep order":"অর্ডার রাখুন","Stop order":"অর্ডার বন্ধ করুন","Order stopped":"অর্ডার বন্ধ করা হয়েছে","Updated":"আপডেট হয়েছে","Could not refresh":"রিফ্রেশ করা যায়নি","Stopped":"বন্ধ","Cancelled":"বাতিল","Expired":"মেয়াদ শেষ",
+  "You stopped this order. Create a new order to recharge again.":"আপনি এই অর্ডার বন্ধ করেছেন। আবার রিচার্জ করতে নতুন অর্ডার তৈরি করুন।","This order has expired. If you have not paid, stop it and create a new order. If you already paid, submit your TXID.":"এই অর্ডারের মেয়াদ শেষ। পেমেন্ট না করে থাকলে এটি বন্ধ করে নতুন অর্ডার তৈরি করুন। আগেই পেমেন্ট করে থাকলে TXID জমা দিন।","Scan with your wallet app. The address fills in automatically.":"ওয়ালেট অ্যাপ দিয়ে স্ক্যান করুন। অ্যাড্রেস নিজে থেকেই বসে যাবে।","Save QR image":"QR ছবি সেভ করুন","Share QR image":"QR ছবি শেয়ার করুন","QR image saved":"QR ছবি সেভ হয়েছে","Could not save the image":"ছবি সেভ করা যায়নি","Address copied":"অ্যাড্রেস কপি হয়েছে","Confirm before payment":"পেমেন্টের আগে নিশ্চিত করুন","Confirm to create the order and continue to payment.":"অর্ডার তৈরি করে পেমেন্টে যেতে নিশ্চিত করুন।","The amount must match exactly":"পরিমাণ হুবহু মিলতে হবে",
+  "For USDT deposits, please pay the network fee yourself and make sure the amount received matches the order amount exactly.":"USDT ডিপোজিটে নেটওয়ার্ক ফি নিজে বহন করুন এবং নিশ্চিত করুন যে পৌঁছানো পরিমাণ অর্ডারের পরিমাণের সাথে হুবহু মিলে যায়।",
+  "A different amount can delay your recharge and needs manual checking, which takes more time.":"পরিমাণ ভিন্ন হলে রিচার্জে দেরি হতে পারে এবং হাতে যাচাই করতে বেশি সময় লাগে।","Check the address and network":"অ্যাড্রেস ও নেটওয়ার্ক যাচাই করুন",
+  "Do not pay twice to the same order address.":"একই অর্ডারের অ্যাড্রেসে দুইবার পেমেন্ট করবেন না।","For another recharge, create a new order.":"আরেকটি রিচার্জের জন্য নতুন অর্ডার তৈরি করুন।","Cancel":"বাতিল","Confirm and continue":"নিশ্চিত করে এগিয়ে যান","Locked":"লক করা","This order is on hold for checking. Contact support if you need help.":"এই অর্ডার যাচাইয়ের জন্য আটকে রাখা হয়েছে। সাহায্য লাগলে সাপোর্টে যোগাযোগ করুন।",
   "Team summary":"টিম সামারি","All":"সব","Members":"সদস্য","Tasks done":"সম্পন্ন টাস্ক","Total transaction (BDT)":"মোট ট্রানজেকশন (BDT)","Total transaction":"মোট ট্রানজেকশন",
   "Active":"অ্যাক্টিভ","Inactive":"ইনঅ্যাক্টিভ","Active referral bonus":"অ্যাক্টিভ রেফার বোনাস",
   "No active members at this level yet.":"এই লেভেলে এখনো কোনো অ্যাক্টিভ সদস্য নেই।","No inactive members at this level.":"এই লেভেলে কোনো ইনঅ্যাক্টিভ সদস্য নেই।",
@@ -501,6 +540,10 @@ const BNP = [
   [/^Range (\d+) – (\d+)$/, m=>"সীমা "+m[1]+" – "+m[2]],
   [/^Allowed range: (\d+) – (\d+) BDT$/, m=>"অনুমোদিত সীমা: "+m[1]+" – "+m[2]+" BDT"],
   [/^(.+) address$/, m=>m[1]+" অ্যাড্রেস"],
+  [/^Confirm operation \((\d+)s\)$/, m=>"নিশ্চিত করুন ("+m[1]+"s)"],
+  [/^Stop order (.+) for (.+) BDT on (.+)\. If you have already transferred funds, do not stop: refresh and check the order first\.$/, m=>"অর্ডার "+m[1]+" ("+m[2]+" BDT, "+m[3]+") বন্ধ করা হবে। আপনি আগেই টাকা পাঠিয়ে থাকলে বন্ধ করবেন না: আগে রিফ্রেশ করে অর্ডার দেখুন।"],
+  [/^Send exactly (.+) USDT on (.+)\. A different amount can fail the recharge\.$/, m=>"ঠিক "+m[1]+" USDT পাঠান ("+m[2]+")। ভিন্ন পরিমাণ পাঠালে রিচার্জ ব্যর্থ হতে পারে।"],
+  [/^Only use the (.+) network and the receiving address shown on the order page\.$/, m=>"শুধু "+m[1]+" নেটওয়ার্ক এবং অর্ডার পেজে দেখানো রিসিভিং অ্যাড্রেস ব্যবহার করুন।"],
   [/^Sale orders (\d+)$/, m=>"বিক্রির অর্ডার "+m[1]],
   [/^Purchase orders (\d+)$/, m=>"ক্রয়ের অর্ডার "+m[1]],
   [/^(\d+) connected$/, m=>m[1]+" যুক্ত"],
@@ -660,6 +703,103 @@ function buy(){
 
 
 /* ---------- USDT recharge ---------- */
+/* Tiny QR encoder: byte mode, error correction level M, versions 1-10 */
+const qrMatrix = (() => {
+  const EXP = new Array(512), LOG = new Array(256);
+  (() => { let x = 1; for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 256) x ^= 0x11d; } for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255]; })();
+  const gmul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+  const rsGen = n => { let g = [1]; for (let i = 0; i < n; i++) { const ng = new Array(g.length + 1).fill(0); for (let j = 0; j < g.length; j++) { ng[j] ^= g[j]; ng[j + 1] ^= gmul(g[j], EXP[i]); } g = ng; } return g; };
+  const rsEc = (data, n) => { const g = rsGen(n), r = new Array(n).fill(0); for (const b of data) { const f = b ^ r[0]; r.shift(); r.push(0); if (f) for (let i = 0; i < n; i++) r[i] ^= gmul(g[i + 1], f); } return r; };
+  /* [ecPerBlock, [[blocks, dataPerBlock], ...]] for level M */
+  const VM = [null, [10,[[1,16]]], [16,[[1,28]]], [26,[[1,44]]], [18,[[2,32]]], [24,[[2,43]]], [16,[[4,27]]], [18,[[4,31]]], [22,[[2,38],[2,39]]], [22,[[3,36],[2,37]]], [26,[[4,43],[1,44]]]];
+  const ALIGN = [null, [], [6,18], [6,22], [6,26], [6,30], [6,34], [6,22,38], [6,24,42], [6,26,46], [6,28,50]];
+  const bch = (v, poly, shift) => { const hb = x => 31 - Math.clz32(x); let r = v << shift; while (r && hb(r) >= hb(poly)) r ^= poly << (hb(r) - hb(poly)); return r; };
+  const MASKS = [(r,c)=>(r+c)%2===0, (r,c)=>r%2===0, (r,c)=>c%3===0, (r,c)=>(r+c)%3===0, (r,c)=>(((r>>1)+Math.floor(c/3))%2)===0, (r,c)=>((r*c)%2+(r*c)%3)===0, (r,c)=>(((r*c)%2+(r*c)%3)%2)===0, (r,c)=>(((r+c)%2+(r*c)%3)%2)===0];
+  return function (text) {
+    const bytes = Array.from(new TextEncoder().encode(String(text)));
+    let v = 0;
+    for (let i = 1; i <= 10; i++) { const cap = VM[i][1].reduce((s,[n,d]) => s + n*d, 0); const need = 4 + (i < 10 ? 8 : 16) + bytes.length * 8; if (need <= cap * 8) { v = i; break; } }
+    if (!v) throw new Error("QR: text too long");
+    const [ecN, groups] = VM[v], cap = groups.reduce((s,[n,d]) => s + n*d, 0);
+    let bits = []; const put = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >> i) & 1); };
+    put(4, 4); put(bytes.length, v < 10 ? 8 : 16); bytes.forEach(b => put(b, 8));
+    for (let i = 0; i < 4 && bits.length < cap * 8; i++) bits.push(0);
+    while (bits.length % 8) bits.push(0);
+    const data = []; for (let i = 0; i < bits.length; i += 8) data.push(parseInt(bits.slice(i, i + 8).join(""), 2));
+    for (let p = 0; data.length < cap; p ^= 1) data.push(p ? 0x11 : 0xec);
+    const blocks = []; let off = 0;
+    for (const [n, d] of groups) for (let i = 0; i < n; i++) { const dd = data.slice(off, off + d); off += d; blocks.push([dd, rsEc(dd, ecN)]); }
+    const out = [], maxD = Math.max(...blocks.map(b => b[0].length));
+    for (let i = 0; i < maxD; i++) blocks.forEach(b => { if (i < b[0].length) out.push(b[0][i]); });
+    for (let i = 0; i < ecN; i++) blocks.forEach(b => out.push(b[1][i]));
+    const stream = []; out.forEach(b => put2(b)); function put2(b){ for (let i = 7; i >= 0; i--) stream.push((b >> i) & 1); }
+    const N = 17 + 4 * v;
+    const base = Array.from({length:N}, () => new Array(N).fill(null)), fn = Array.from({length:N}, () => new Array(N).fill(false));
+    const set = (r, c, val) => { if (r >= 0 && c >= 0 && r < N && c < N) { base[r][c] = val; fn[r][c] = true; } };
+    const finder = (r0, c0) => { for (let r = -1; r <= 7; r++) for (let c = -1; c <= 7; c++) { const on = r >= 0 && r <= 6 && c >= 0 && c <= 6 && (r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4)); set(r0 + r, c0 + c, on ? 1 : 0); } };
+    finder(0, 0); finder(0, N - 7); finder(N - 7, 0);
+    for (let i = 8; i < N - 8; i++) { set(6, i, i % 2 === 0 ? 1 : 0); set(i, 6, i % 2 === 0 ? 1 : 0); }
+    const ap = ALIGN[v];
+    for (const r of ap) for (const c of ap) { if ((r === 6 && c === 6) || (r === 6 && c === ap[ap.length-1]) || (c === 6 && r === ap[ap.length-1])) continue; for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) set(r + dr, c + dc, Math.max(Math.abs(dr), Math.abs(dc)) !== 1 ? 1 : 0); }
+    set(4 * v + 9, 8, 1);
+    for (let i = 0; i < 9; i++) { if (!fn[8][i]) set(8, i, 0); if (!fn[i][8]) set(i, 8, 0); }
+    for (let i = 0; i < 8; i++) { set(8, N - 1 - i, 0); set(N - 1 - i, 8, 0); }
+    set(4 * v + 9, 8, 1);
+    if (v >= 7) { const info = (v << 12) | bch(v, 0x1f25, 12); for (let i = 0; i < 18; i++) { const b = (info >> i) & 1, a = Math.floor(i / 3), c = i % 3 + N - 11; set(a, c, b); set(c, a, b); } }
+    const place = mask => {
+      const m = base.map(r => r.slice()); let k = 0, up = true;
+      for (let c = N - 1; c > 0; c -= 2) { if (c === 6) c--; for (let i = 0; i < N; i++) { const r = up ? N - 1 - i : i; for (let j = 0; j < 2; j++) { const cc = c - j; if (fn[r][cc]) continue; let bit = k < stream.length ? stream[k] : 0; k++; if (MASKS[mask](r, cc)) bit ^= 1; m[r][cc] = bit; } } up = !up; }
+      const fmt = (((0 << 3) | mask) << 10 | bch((0 << 3) | mask, 0x537, 10)) ^ 0x5412;
+      const fb = i => (fmt >> i) & 1;
+      for (let i = 0; i <= 5; i++) m[i][8] = fb(i); m[7][8] = fb(6); m[8][8] = fb(7); m[8][7] = fb(8); for (let i = 9; i < 15; i++) m[8][14 - i] = fb(i);
+      for (let i = 0; i < 8; i++) m[8][N - 1 - i] = fb(i); for (let i = 8; i < 15; i++) m[N - 15 + i][8] = fb(i);
+      m[4 * v + 9][8] = 1; return m;
+    };
+    const penalty = m => {
+      let p = 0;
+      for (let t = 0; t < 2; t++) for (let i = 0; i < N; i++) { let run = 1; for (let j = 1; j < N; j++) { const a = t ? m[j][i] : m[i][j], b = t ? m[j-1][i] : m[i][j-1]; if (a === b) { run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; } }
+      for (let r = 0; r < N - 1; r++) for (let c = 0; c < N - 1; c++) if (m[r][c] === m[r][c+1] && m[r][c] === m[r+1][c] && m[r][c] === m[r+1][c+1]) p += 3;
+      const pat = [1,0,1,1,1,0,1,0,0,0,0], pat2 = pat.slice().reverse();
+      for (let t = 0; t < 2; t++) for (let i = 0; i < N; i++) for (let j = 0; j <= N - 11; j++) { let a = true, b = true; for (let k = 0; k < 11; k++) { const x = t ? m[j+k][i] : m[i][j+k]; if (x !== pat[k]) a = false; if (x !== pat2[k]) b = false; } if (a) p += 40; if (b) p += 40; }
+      let dark = 0; for (const r of m) for (const x of r) dark += x; p += Math.floor(Math.abs(dark * 20 - N * N * 10) / (N * N)) * 10; return p;
+    };
+    let best = null, bp = Infinity;
+    for (let mk = 0; mk < 8; mk++) { const m = place(mk), pp = penalty(m); if (pp < bp) { bp = pp; best = m; } }
+    return best;
+  };
+})();
+
+const uQrSvg = text => {
+  try {
+    const m = qrMatrix(text), n = m.length; let d = "";
+    for (let r = 0; r < n; r++) { let c = 0; while (c < n) { if (m[r][c]) { let e = c; while (e < n && m[r][e]) e++; d += "M"+c+" "+r+"h"+(e-c)+"v1h-"+(e-c)+"z"; c = e; } else c++; } }
+    return `<svg viewBox="-2 -2 ${n+4} ${n+4}" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect x="-2" y="-2" width="${n+4}" height="${n+4}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+  } catch(e){ return ""; }
+};
+const uQrBlob = text => new Promise((res, rej) => {
+  try {
+    const m = qrMatrix(text), n = m.length, k = 12, q = 4, size = (n + q*2) * k, cv = document.createElement("canvas");
+    cv.width = cv.height = size; const g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0,0,size,size); g.fillStyle = "#000";
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (m[r][c]) g.fillRect((c+q)*k, (r+q)*k, k, k);
+    cv.toBlob(b => b ? res(b) : rej(new Error("no image")), "image/png");
+  } catch(e){ rej(e); }
+});
+async function uQrSave(){
+  const o = S.usdtOrders.find(x=>x.id===S.detailId); if(!o || !o.address) return;
+  try{
+    const url = URL.createObjectURL(await uQrBlob(o.address)), a = document.createElement("a");
+    a.href = url; a.download = "usdt-address-qr.png"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 5000); toast("QR image saved");
+  }catch(e){ toast("Could not save the image"); }
+}
+async function uQrShare(){
+  const o = S.usdtOrders.find(x=>x.id===S.detailId); if(!o || !o.address) return;
+  try{
+    const file = new File([await uQrBlob(o.address)], "usdt-address-qr.png", {type:"image/png"});
+    if(navigator.canShare && navigator.canShare({files:[file]})) await navigator.share({files:[file], title:"USDT address", text:o.address});
+    else if(navigator.share) await navigator.share({title:"USDT address", text:o.address});
+    else copyOrShow(o.address, "Address copied");
+  }catch(e){ if(e && e.name !== "AbortError") copyOrShow(o.address, "Address copied"); }
+}
 const UCH = [1000,3000,5000,10000,30000,50000];
 const ucfg = () => { const c = S.ucfg || {}; return { address:String(c.address || (DEMO ? "0xDEMO0000000000000000000000000000000000AB" : "")).trim(), network:c.network || "USDT-BSC", min:Number(c.min)>0 ? Number(c.min) : 700, max:Number(c.max)>0 ? Number(c.max) : 999999 }; };
 const uCalc = a => { const bp = Number(S.rates.bonus)||0, rate = Number(S.rates.usdt)||0, bonus = Math.round(a*bp)/100; return { bp, rate, bonus, total:a+bonus, usdt:rate>0 ? Math.round(a/rate*100)/100 : 0 }; };
@@ -688,7 +828,60 @@ function usdtBuy(){
   <div class="ux-tk"><div class="ux-tk-top"><div class="l">You will send</div><div class="v"><b id="u_usdt">${fmt(k.usdt)}</b><span>USDT</span></div><div class="r">1 USDT ≈ ${fmt(k.rate)} BDT</div></div><div class="ux-cut"></div>
     <div class="ux-tk-bot"><div class="ux-l2"><span>Recharge amount</span><b id="u_rc">${fmt(a)} BDT</b></div><div class="ux-l2"><span>Bonus ${k.bp}%</span><b id="u_bn">+${fmt(k.bonus)} BDT</b></div><div class="ux-l2 tot"><span>Total received</span><b id="u_tt">${fmt(k.total)} BDT</b></div></div></div>
   <button class="ux-go" id="u_go" data-ucreate ${ok?"":"disabled"}><span>Create USDT order</span><span>→</span></button>
-  <div class="ux-note">${c.address ? "You get the wallet address on the next page. Balance is added after admin confirms your payment." : "USDT recharge is not available right now. Please try again later."}</div>`;
+  <div class="ux-note">${c.address ? "You get the wallet address on the next page. Balance is added after admin confirms your payment." : "USDT recharge is not available right now. Please try again later."}</div>` + (S.uConfirm ? uConfirmModal(c) : "");
+}
+function uConfirmModal(c){
+  return `<div class="modal ux-center"><div class="ux-dlg">
+    <div class="ux-dh"><span class="ux-dic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><div><h3>Confirm before payment</h3><p>Confirm to create the order and continue to payment.</p></div></div>
+    <div class="ux-dred"><b>The amount must match exactly</b><p>For USDT deposits, please pay the network fee yourself and make sure the amount received matches the order amount exactly.</p><p>A different amount can delay your recharge and needs manual checking, which takes more time.</p></div>
+    <div class="ux-dyel"><b>Check the address and network</b><p>Only use the ${esc(c.network)} network and the receiving address shown on the order page.</p></div>
+    <div class="ux-dchk"><i>✓</i><span>Do not pay twice to the same order address.</span></div>
+    <div class="ux-dchk"><i>✓</i><span>For another recharge, create a new order.</span></div>
+    <div class="ux-dbtn"><button class="c" data-ucancel>Cancel</button><button class="o" data-uconfirm>Confirm and continue</button></div>
+  </div></div>`;
+}
+function uAsk(){
+  if(restricted()) return toast(ACC_MSG[accStatus()][0]+": new orders are disabled");
+  const c = ucfg(), a = Math.floor(Number(S.uAmt)||0);
+  if(!c.address) return toast("USDT recharge is not available right now");
+  if(a<c.min || a>c.max) return toast("Amount must be between "+c.min+" and "+c.max+" BDT");
+  S.uConfirm = true; render();
+}
+
+const UTTL = 25*60*1000;
+const UWARN = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>`;
+const uLeft = o => Math.max(0, (o.createdMs || Date.now()) + UTTL - Date.now());
+const uClock = ms2 => String(Math.floor(ms2/60000)).padStart(2,"0") + ":" + String(Math.floor(ms2%60000/1000)).padStart(2,"0");
+setInterval(()=>{
+  const el = document.getElementById("u_timer"); if(!el) return;
+  const left = Math.max(0, (+el.dataset.t0||0) + UTTL - Date.now());
+  if(left <= 0){ if(el.dataset.exp !== "1") render(); return; }
+  const b = el.querySelector("b"); if(b) b.textContent = uClock(left);
+}, 1000);
+setInterval(()=>{
+  const bt = document.getElementById("u_stopyes"); if(!bt) return;
+  const left = Math.max(0, Math.ceil(((S.uStopAt||0) + 5000 - Date.now()) / 1000));
+  if(left > 0){ bt.disabled = true; bt.textContent = "Confirm operation ("+left+"s)"; }
+  else if(bt.disabled){ bt.disabled = false; bt.textContent = "Confirm operation"; }
+}, 250);
+async function uRefreshOrder(){
+  const o = S.usdtOrders.find(x=>x.id===S.detailId); if(!o) return;
+  const btn = document.querySelector("[data-urefresh]"); if(btn) btn.classList.add("spin");
+  try{
+    if(!DEMO){ const r = await fb.getDoc(fb.doc(db,"usdtOrders",o.id)); if(r.exists()){ const x = r.data(); Object.assign(o, {...x, id:o.id, createdMs:ms(x.createdAt) || o.createdMs}); } }
+    toast("Updated");
+  }catch(e){ toast("Could not refresh"); }
+  render();
+}
+async function uStopOrder(){
+  const o = S.usdtOrders.find(x=>x.id===S.detailId); S.uStop = false;
+  if(!o || o.status!=="created"){ render(); return; }
+  try{
+    if(DEMO) o.status = "cancelled";
+    else await fb.updateDoc(fb.doc(db,"usdtOrders",o.id), {status:"cancelled", history:hist("cancelled","Order stopped by user")});
+    toast("Order stopped");
+  }catch(e){ toast("Failed: "+(e.code||e.message)); }
+  render();
 }
 async function uCreate(){
   if(restricted()) return toast(ACC_MSG[accStatus()][0]+": new orders are disabled");
@@ -718,29 +911,33 @@ async function uSubmit(){
   S.uBusy = false; render();
 }
 function usdtDetailView(){
-  const head2 = `<div class="ohead"><button data-back aria-label="Back">${CHEV}</button><h1>USDT Order</h1><span></span></div>`;
+  const head2 = `<div class="ohead"><button data-back aria-label="Back">${CHEV}</button><h1>USDT Order</h1><button class="ux-rf" data-urefresh aria-label="Refresh"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12A9 9 0 0 1 18.5 5.8L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></svg></button></div>`;
   const o = S.usdtOrders.find(x=>x.id===S.detailId);
   if(!o) return head2 + `<div class="empty">Order not found</div>`;
-  const st = o.status, paid = st!=="created" || !!o.txid;
+  const st = o.status, stopped = st==="cancelled", paid = (st!=="created" && !stopped) || !!o.txid, left = uLeft(o), exp = st==="created" && left<=0;
   const s1 = `<div class="ux-st ok"><i>✓</i><span>Created</span></div>`;
-  const s2 = paid ? `<div class="ux-st ok"><i>✓</i><span>Paid</span></div>` : `<div class="ux-st on"><i>2</i><span>Pay USDT</span></div>`;
-  const s3 = st==="success" ? `<div class="ux-st ok"><i>✓</i><span>Done</span></div>` : st==="failed" ? `<div class="ux-st bad"><i>✕</i><span>Failed</span></div>` : st==="pending" ? `<div class="ux-st on"><i>3</i><span>Checking</span></div>` : `<div class="ux-st"><i>3</i><span>Done</span></div>`;
-  const msg = st==="created" ? "Send the USDT below, then paste your transaction hash." : st==="pending" ? "Payment proof received. Admin is checking it." : st==="success" ? "Recharge complete. The amount is in your balance." : "This order failed. Contact support if you already paid.";
+  const s2 = paid ? `<div class="ux-st ok"><i>✓</i><span>Paid</span></div>` : stopped ? `<div class="ux-st"><i>2</i><span>Pay USDT</span></div>` : `<div class="ux-st on"><i>2</i><span>Pay USDT</span></div>`;
+  const s3 = stopped ? `<div class="ux-st bad"><i>✕</i><span>Stopped</span></div>` : st==="success" ? `<div class="ux-st ok"><i>✓</i><span>Done</span></div>` : st==="failed" ? `<div class="ux-st bad"><i>✕</i><span>Failed</span></div>` : st==="lock" ? `<div class="ux-st bad"><i>!</i><span>Locked</span></div>` : st==="pending" ? `<div class="ux-st on"><i>3</i><span>Checking</span></div>` : `<div class="ux-st"><i>3</i><span>Done</span></div>`;
+  const msg = stopped ? "You stopped this order. Create a new order to recharge again." : exp ? "This order has expired. If you have not paid, stop it and create a new order. If you already paid, submit your TXID." : st==="created" ? "Send the USDT below before the timer ends, then paste your transaction hash." : st==="pending" ? "Payment proof received. Admin is checking it." : st==="success" ? "Recharge complete. The amount is in your balance." : st==="lock" ? "This order is on hold for checking. Contact support if you need help." : "This order failed. Contact support if you already paid.";
   const row = (k,v) => `<div class="flex" style="padding:9px 0;border-top:1px solid var(--line)"><span class="sp sub" style="margin:0">${k}</span><b style="font-size:13px;word-break:break-all;text-align:right;max-width:62%">${v}</b></div>`;
   const pay = st==="created" ? `
   <div class="card"><div class="sub" style="margin:0 0 6px">Send exactly</div>
-    <div class="ux-addr"><span style="font-family:var(--display);font-size:16px;color:#12805f">${fmt(o.usdt)} USDT</span><button data-ucopy="${fmt(o.usdt)}">Copy</button></div>
+    <div class="ux-addr"><span style="font-family:var(--display);font-size:16px;color:var(--g)">${fmt(o.usdt)} USDT</span><button data-ucopy="${fmt(o.usdt)}">Copy</button></div>
     <div class="sub" style="margin:12px 0 6px">${esc(o.network||"USDT-BSC")} address</div>
     <div class="ux-addr"><span>${esc(o.address||"")}</span><button data-ucopy="${esc(o.address||"")}">Copy</button></div>
+    ${o.address ? `<div class="ux-qrbox"><div class="ux-qrnote">Scan with your wallet app. The address fills in automatically.</div><div class="ux-qr">${uQrSvg(o.address)}</div><div class="ux-qrsub">Send exactly ${fmt(o.usdt)} USDT on ${esc(o.network||"USDT-BSC")}. A different amount can fail the recharge.</div><div class="ux-qrbtns"><button data-uqsave>Save QR image</button><button data-uqshare>Share QR image</button></div></div>` : ""}
     <div class="ux-warn">Send only USDT on the BSC (BEP20) network. Other coins or networks cannot be recovered.</div>
     <div class="sub" style="margin:14px 0 0">Transaction hash (TXID)</div>
     <input class="ux-tx" id="u_tx" placeholder="Paste TXID after payment" autocomplete="off" value="${esc(S.uTx||"")}">
-    <button class="ux-go" style="margin-top:12px" data-usub>Submit payment proof</button></div>` : "";
+    <button class="ux-go" style="margin-top:12px" data-usub>Submit recharge request</button>
+    <button class="ux-stop" data-ustop>Stop recharge order</button></div>` : "";
+  const sLeft = Math.max(0, Math.ceil(((S.uStopAt||0) + 5000 - Date.now()) / 1000));
+  const stopModal = (S.uStop && st==="created") ? `<div class="modal ux-center"><div class="ux-dlg"><div class="ux-dh"><span class="ux-dic">${UWARN}</span><div><h3>Stop recharge order</h3></div></div><p class="ux-stopt">Stop order ${esc(o.orderNo||String(o.id).slice(0,8).toUpperCase())} for ${fmt(o.amount)} BDT on ${esc(o.network||"USDT-BSC")}. If you have already transferred funds, do not stop: refresh and check the order first.</p><div class="ux-dbtn"><button class="c" data-ustopno>Cancel</button><button class="o" id="u_stopyes" data-ustopyes ${sLeft>0?"disabled":""}>${sLeft>0 ? "Confirm operation ("+sLeft+"s)" : "Confirm operation"}</button></div></div></div>` : "";
   return head2 + `
   <div class="ux-steps">${s1}<div class="ux-ln on"></div>${s2}<div class="ux-ln ${paid?"on":""}"></div>${s3}</div>
-  <div class="ux-st-card ${st}"><div class="flex"><div class="sp sub" style="margin:0">Total received</div>${pill(st)}</div><div class="big">${fmt(o.total)} BDT</div><div class="sub">${msg}</div></div>
+  <div class="ux-st-card ${st}"><div class="flex"><div class="sp sub" style="margin:0">Total received</div>${st==="created" ? `<span class="ux-timer ${exp?"exp":""}" id="u_timer" data-t0="${o.createdMs||0}" data-exp="${exp?1:0}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b>${exp ? "Expired" : uClock(left)}</b></span>` : pill(st)}</div><div class="big">${fmt(o.total)} BDT</div><div class="sub">${msg}</div></div>
   ${pay}
-  <div class="card" style="padding:6px 14px">${row("Order ID",esc(o.orderNo||String(o.id).slice(0,8).toUpperCase()))}${row("Network",esc(o.network||"USDT-BSC"))}${row("Recharge amount",fmt(o.amount)+" BDT")}${row("Bonus ("+(o.bonusPct||0)+"%)","+"+fmt(o.bonus)+" BDT")}${row("USDT amount",fmt(o.usdt)+" USDT")}${row("Rate","1 USDT ≈ "+fmt(o.rate)+" BDT")}${row("Created",esc(fmtT(o.createdMs)))}${o.txid ? row("TXID",esc(o.txid)) : ""}</div>`;
+  <div class="card" style="padding:6px 14px">${row("Order ID",esc(o.orderNo||String(o.id).slice(0,8).toUpperCase()))}${row("Network",esc(o.network||"USDT-BSC"))}${row("Recharge amount",fmt(o.amount)+" BDT")}${row("Bonus ("+(o.bonusPct||0)+"%)","+"+fmt(o.bonus)+" BDT")}${row("USDT amount",fmt(o.usdt)+" USDT")}${row("Rate","1 USDT ≈ "+fmt(o.rate)+" BDT")}${row("Created",esc(fmtT(o.createdMs)))}${o.txid ? row("TXID",esc(o.txid)) : ""}</div>${stopModal}`;
 }
 
 function sell(){
@@ -929,7 +1126,7 @@ function sheetView(){
 }
 
 function authView(){
-  if(!DEMO && !READY) return `<div class="auth"><h1>Nova Pay</h1><p class="sub" style="margin-top:14px;font-size:13px">Connecting to server... ${Math.round((Date.now()-T0)/1000)}s</p><p class="sub" style="margin-top:8px">${esc(S.status||"Starting...")}</p><p class="sub" style="margin-top:8px">A slow network can take up to a minute. If it stays stuck, reload.</p><button class="btn" style="margin-top:20px" onclick="location.reload()">Reload</button></div>`;
+  if(!DEMO && !READY) return "";   /* nothing is shown while Firebase loads: no text, no spinner, no Reload button */
   const reg = S.authMode==="register", f = S.authForm;
   const refLine = !reg ? "" : S.refChecking ? `<p class="sub" style="margin-top:8px">Checking referral code...</p>`
     : S.refOk===true ? `<p style="margin-top:8px;color:var(--g);font-size:11px">✅ ${esc(S.refMsg||"This referral code is valid.")}</p>`
@@ -960,7 +1157,7 @@ function navSync(){
   if (navRestoring) return;
   try {
     const snap = navSnap(), key = JSON.stringify(snap);
-    if (S.user) { try { sessionStorage.setItem("nova_nav", JSON.stringify({ u:S.user.uid, t:snap.t, v:snap.v, d:snap.d, s:snap.s })); } catch {} }
+    if (S.user) { try { sessionStorage.setItem("nova_nav", JSON.stringify({ u:S.user.uid, t:snap.t, v:snap.v, d:snap.d, s:snap.s, c:S.cur, h:S.hTop })); } catch {} }
     if (navLast === null) { history.replaceState({ nv:snap, i:0 }, ""); navLast = key; navIdx = 0; return; }
     if (key !== navLast) { history.pushState({ nv:snap, i:++navIdx }, ""); navLast = key; }
   } catch {}
@@ -1181,14 +1378,15 @@ function listenTodayRef(uid){
     if(un){ un(); un = null; }
     const start = new Date(); start.setHours(0,0,0,0);
     const next = new Date(start); next.setDate(next.getDate()+1);
-    S.refToday = 0; render();
+    S.refToday = 0; S.pT = null; render();
     const {collection,query,where,orderBy,onSnapshot,Timestamp} = fb;
     un = onSnapshot(query(collection(db,"users",uid,"ledger"), where("createdAt",">=",Timestamp.fromDate(start)), orderBy("createdAt","desc")), snap=>{
-      let t = 0;
+      let t = 0, pa = 0, pn = 0; const bdStart = Date.parse(todayStr()+"T00:00:00+06:00");
       snap.docs.forEach(d=>{ const x = d.data(), a = Number(x.amount)||0;
+        if(x.kind === "purchase" && (x.createdAt?.toMillis?.() ?? Date.now()) >= bdStart){ pa += a; pn++; }
         if(x.kind === "referral" || x.kind === "referral_bonus") t += a;
         else if(x.kind === "referral_reverse") t -= a; });
-      S.refToday = Math.max(0, Math.round(t*100)/100); render();
+      S.refToday = Math.max(0, Math.round(t*100)/100); S.pT = {a:Math.round(pa*100)/100, n:pn}; render();
     }, ()=>{});
     timer = setTimeout(run, next - Date.now() + 500);     /* midnight: reset to 0 */
   };
@@ -1321,11 +1519,19 @@ document.addEventListener("input", e=>{
 document.addEventListener("click", async e=>{
   const t=e.target.closest("button,a"); if(!t) return;
   const d=t.dataset;
-  if("tab" in d){ S.tab=d.tab; S.view=null; render(); scrollTo(0,0); }
+  if("tab" in d){ S.tab=d.tab; S.view=null; S.uConfirm=false; S.uStop=false; render(); scrollTo(0,0); }
   else if("uchip" in d){ S.uAmt = +d.uchip; render(); }
   else if("ustep" in d){ const c = ucfg(); S.uAmt = Math.min(c.max, Math.max(c.min, (Number(S.uAmt)||0) + (+d.ustep))); render(); }
-  else if("ucreate" in d){ uCreate(); }
+  else if("ucreate" in d){ uAsk(); }
+  else if("ucancel" in d){ S.uConfirm = false; render(); }
+  else if("uconfirm" in d){ S.uConfirm = false; uCreate(); }
   else if("usub" in d){ uSubmit(); }
+  else if("urefresh" in d){ uRefreshOrder(); }
+  else if("ustop" in d){ S.uStop = true; S.uStopAt = Date.now(); render(); }
+  else if("ustopno" in d){ S.uStop = false; render(); }
+  else if("ustopyes" in d){ if(Date.now() < (S.uStopAt||0) + 5000) return; uStopOrder(); }
+  else if("uqsave" in d){ uQrSave(); }
+  else if("uqshare" in d){ uQrShare(); }
   else if("ucopy" in d){ copyOrShow(d.ucopy, "Copied"); }
   else if("udetail" in d){ S.detailId = d.udetail; S.view = "udetail"; render(); scrollTo(0,0); }
   else if("ures" in d){ S.view = "orders"; S.hTop = "usdt"; render(); scrollTo(0,0); }
@@ -1401,9 +1607,9 @@ if(!DEMO){
       /* page refresh: stay on the same page (Home / Buy / Sell / Mine or inner page) instead of jumping to Home */
       if(!window.__navBoot){ window.__navBoot = true;
         if(u){ try{ const sv = JSON.parse(sessionStorage.getItem("nova_nav")||"null");
-          if(sv && sv.u===u.uid && ["home","buy","sell","mine"].includes(sv.t)){ S.tab=sv.t; S.view=sv.v||null; S.detailId=sv.d||null; S.detailSid=sv.s||null; } }catch{} }
+          if(sv && sv.u===u.uid && ["home","buy","sell","mine"].includes(sv.t)){ S.tab=sv.t; S.view=sv.v||null; S.detailId=sv.d||null; S.detailSid=sv.s||null; if(sv.c==="BDT"||sv.c==="USDT") S.cur=sv.c; if(["buy","sell","usdt"].includes(sv.h)) S.hTop=sv.h; } }catch{} }
       } else if(!u){ try{ sessionStorage.removeItem("nova_nav"); }catch{} S.tab="home"; }
-      S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sellOrders=[]; S.usdtOrders=[]; S.redeems=[]; S.rcInput=""; S.sheet=null;
+      S.codeChecked=false; S.codeOk=undefined; S.team=[]; S.myOrders=[]; S.sellOrders=[]; S.usdtOrders=[]; S.pT=null; S.redeems=[]; S.rcInput=""; S.sheet=null;
       render();
       if(u) subscribe(u.uid);
     });
