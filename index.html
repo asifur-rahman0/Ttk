@@ -811,7 +811,8 @@ function uRefresh(){
   const go = document.getElementById("u_go"); if(go) go.disabled = !(a>=c.min && a<=c.max && c.address);
 }
 function usdtBuy(){
-  const c = ucfg(), a = Number(S.uAmt)||0, k = uCalc(a), ok = a>=c.min && a<=c.max && !!c.address;
+  const c = ucfg(), a = Number(S.uAmt)||0, k = uCalc(a), op = uOpen(), ok = a>=c.min && a<=c.max && !!c.address && !op;
+  const opBox = op ? `<div class=\"ux-warn\" style=\"margin:12px 0\"><b>You have an open USDT order</b><br>Order ${esc(op.orderNo||String(op.id).slice(0,8).toUpperCase())} · ${fmt(op.amount)} BDT · ${pill(op.status)}<br>You can create a new order only after this one is Success, Failed or Cancelled. If you have not paid, open it and stop it.<br><button type=\"button\" class=\"btn sm\" style=\"margin-top:8px\" data-udetail=\"${op.id}\">View order</button></div>` : "";
   const chips = UCH.map(v=>`<button type="button" class="${v===a?"act":""}" data-uchip="${v}" ${(v<c.min||v>c.max)?"disabled":""}><b>${v}</b><small>≈ ${fmt(k.rate>0 ? v/k.rate : 0)} USDT</small></button>`).join("");
   return head("Buy") + `
   <div class="ux-hero"><div class="flex"><div class="sp"><div class="ux-k">USDT RECHARGE</div><h2>Top up with USDT</h2></div><button class="ux-rec" data-ures>${IC.wallet}<span>Records</span></button></div>
@@ -827,7 +828,7 @@ function usdtBuy(){
   <div class="ux-err" id="u_err">${(a && (a<c.min||a>c.max)) ? esc("Allowed range: "+c.min+" – "+c.max+" BDT") : ""}</div>
   <div class="ux-tk"><div class="ux-tk-top"><div class="l">You will send</div><div class="v"><b id="u_usdt">${fmt(k.usdt)}</b><span>USDT</span></div><div class="r">1 USDT ≈ ${fmt(k.rate)} BDT</div></div><div class="ux-cut"></div>
     <div class="ux-tk-bot"><div class="ux-l2"><span>Recharge amount</span><b id="u_rc">${fmt(a)} BDT</b></div><div class="ux-l2"><span>Bonus ${k.bp}%</span><b id="u_bn">+${fmt(k.bonus)} BDT</b></div><div class="ux-l2 tot"><span>Total received</span><b id="u_tt">${fmt(k.total)} BDT</b></div></div></div>
-  <button class="ux-go" id="u_go" data-ucreate ${ok?"":"disabled"}><span>Create USDT order</span><span>→</span></button>
+  ${opBox}<button class="ux-go" id="u_go" data-ucreate ${ok?"":"disabled"}><span>Create USDT order</span><span>→</span></button>
   <div class="ux-note">${c.address ? "You get the wallet address on the next page. Balance is added after admin confirms your payment." : "USDT recharge is not available right now. Please try again later."}</div>` + (S.uConfirm ? uConfirmModal(c) : "");
 }
 function uConfirmModal(c){
@@ -844,11 +845,16 @@ function uAsk(){
   if(restricted()) return toast(ACC_MSG[accStatus()][0]+": new orders are disabled");
   const c = ucfg(), a = Math.floor(Number(S.uAmt)||0);
   if(!c.address) return toast("USDT recharge is not available right now");
+  if(uOpen()) return toast(uOpenMsg);
   if(a<c.min || a>c.max) return toast("Amount must be between "+c.min+" and "+c.max+" BDT");
   S.uConfirm = true; render();
 }
 
 const UTTL = 25*60*1000;
+/* one open USDT order at a time: a new one is allowed only after the last one is Success, Failed or Cancelled */
+const U_OPEN = ["created","pending","lock"];
+const uOpen = () => [...S.usdtOrders].filter(o=>U_OPEN.includes(o.status)).sort((a,b)=>(b.createdMs||0)-(a.createdMs||0))[0] || null;
+const uOpenMsg = "You already have an open USDT order. Finish it first (Success), or stop it, before creating a new one.";
 const UWARN = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>`;
 const uLeft = o => Math.max(0, (o.createdMs || Date.now()) + UTTL - Date.now());
 const uClock = ms2 => String(Math.floor(ms2/60000)).padStart(2,"0") + ":" + String(Math.floor(ms2%60000/1000)).padStart(2,"0");
@@ -888,8 +894,15 @@ async function uCreate(){
   const c = ucfg(), a = Math.floor(Number(S.uAmt)||0);
   if(!c.address) return toast("USDT recharge is not available right now");
   if(a<c.min || a>c.max) return toast("Amount must be between "+c.min+" and "+c.max+" BDT");
+  if(uOpen()){ S.uConfirm = false; render(); return toast(uOpenMsg); }
   if(S.uBusy) return; S.uBusy = true;
   const k = uCalc(a), now = Date.now(), uid = S.user.uid;
+  if(!DEMO){   /* re-check on the server so a stale screen or a second device cannot create another one */
+    try{
+      const snap = await fb.getDocs(fb.query(fb.collection(db,"usdtOrders"), fb.where("userId","==",uid)));
+      if(snap.docs.some(d=>U_OPEN.includes(d.data().status))){ S.uBusy = false; S.uConfirm = false; render(); return toast(uOpenMsg); }
+    }catch(e){ /* if the check itself fails, the local check above still applies */ }
+  }
   const o = { userId:uid, phone:S.profile.phone||"", orderNo:"U"+now+Math.random().toString(36).slice(2,6).toUpperCase(), amount:a, bonusPct:k.bp, bonus:k.bonus, total:k.total, usdt:k.usdt, rate:k.rate, network:c.network, address:c.address, status:"created", txid:"", history:[{status:"created", by:"user", uid, at:now, note:"USDT order created"}] };
   try{
     let id;
